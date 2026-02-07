@@ -1,0 +1,1465 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>
+  Class: TypedBus::Channel
+  
+    &mdash; Documentation by YARD 0.9.38
+  
+</title>
+
+  <link rel="stylesheet" href="../css/style.css" type="text/css" />
+
+  <link rel="stylesheet" href="../css/common.css" type="text/css" />
+
+<script type="text/javascript">
+  pathId = "TypedBus::Channel";
+  relpath = '../';
+</script>
+
+
+  <script type="text/javascript" charset="utf-8" src="../js/jquery.js"></script>
+
+  <script type="text/javascript" charset="utf-8" src="../js/app.js"></script>
+
+
+  </head>
+  <body>
+    <div class="nav_wrap">
+      <iframe id="nav" src="../class_list.html?1"></iframe>
+      <div id="resizer"></div>
+    </div>
+
+    <div id="main" tabindex="-1">
+      <div id="header">
+        <div id="menu">
+  
+    <a href="../_index.html">Index (C)</a> &raquo;
+    <span class='title'><span class='object_link'><a href="../TypedBus.html" title="TypedBus (module)">TypedBus</a></span></span>
+     &raquo; 
+    <span class="title">Channel</span>
+  
+</div>
+
+        <div id="search">
+  
+    <a class="full_list_link" id="class_list_link"
+        href="../class_list.html">
+
+        <svg width="24" height="24">
+          <rect x="0" y="4" width="24" height="4" rx="1" ry="1"></rect>
+          <rect x="0" y="12" width="24" height="4" rx="1" ry="1"></rect>
+          <rect x="0" y="20" width="24" height="4" rx="1" ry="1"></rect>
+        </svg>
+    </a>
+  
+</div>
+        <div class="clear"></div>
+      </div>
+
+      <div id="content"><h1>Class: TypedBus::Channel
+  
+  
+  
+</h1>
+<div class="box_info">
+  
+  <dl>
+    <dt>Inherits:</dt>
+    <dd>
+      <span class="inheritName">Object</span>
+      
+        <ul class="fullTree">
+          <li>Object</li>
+          
+            <li class="next">TypedBus::Channel</li>
+          
+        </ul>
+        <a href="#" class="inheritanceTree">show all</a>
+      
+    </dd>
+  </dl>
+  
+
+  
+  
+  
+  
+  
+
+  
+
+  
+  <dl>
+    <dt>Defined in:</dt>
+    <dd>lib/typed_bus/channel.rb</dd>
+  </dl>
+  
+</div>
+
+<h2>Overview</h2><div class="docstring">
+  <div class="discussion">
+    
+<p>A named, typed pub/sub channel with explicit acknowledgment tracking.</p>
+
+<p>Subscribers receive <code>Delivery</code> objects and must call <code>ack!</code> or <code>nack!</code>. Messages are considered delivered only when ALL subscribers ACK. NACKed or timed-out deliveries go to the dead letter queue.</p>
+
+<p>Optionally bounded: when <code>max_pending</code> is set, publishers block until pending deliveries drain below the limit.</p>
+
+
+  </div>
+</div>
+<div class="tags">
+  
+
+</div>
+
+
+
+  <h2>Instance Attribute Summary <small><a href="#" class="summary_toggle">collapse</a></small></h2>
+  <ul class="summary">
+    
+      <li class="public ">
+  <span class="summary_signature">
+    
+      <a href="#dead_letter_queue-instance_method" title="#dead_letter_queue (instance method)">#<strong>dead_letter_queue</strong>  &#x21d2; Object </a>
+    
+
+    
+  </span>
+  
+  
+  
+    
+      <span class="note title readonly">readonly</span>
+    
+    
+  
+  
+  
+  
+  
+
+  
+    <span class="summary_desc"><div class='inline'>
+<p>Returns the value of attribute dead_letter_queue.</p>
+</div></span>
+  
+</li>
+
+    
+      <li class="public ">
+  <span class="summary_signature">
+    
+      <a href="#name-instance_method" title="#name (instance method)">#<strong>name</strong>  &#x21d2; Object </a>
+    
+
+    
+  </span>
+  
+  
+  
+    
+      <span class="note title readonly">readonly</span>
+    
+    
+  
+  
+  
+  
+  
+
+  
+    <span class="summary_desc"><div class='inline'>
+<p>Returns the value of attribute name.</p>
+</div></span>
+  
+</li>
+
+    
+      <li class="public ">
+  <span class="summary_signature">
+    
+      <a href="#type-instance_method" title="#type (instance method)">#<strong>type</strong>  &#x21d2; Object </a>
+    
+
+    
+  </span>
+  
+  
+  
+    
+      <span class="note title readonly">readonly</span>
+    
+    
+  
+  
+  
+  
+  
+
+  
+    <span class="summary_desc"><div class='inline'>
+<p>Returns the value of attribute type.</p>
+</div></span>
+  
+</li>
+
+    
+  </ul>
+
+
+
+
+  
+    <h2>
+      Instance Method Summary
+      <small><a href="#" class="summary_toggle">collapse</a></small>
+    </h2>
+
+    <ul class="summary">
+      
+        <li class="public ">
+  <span class="summary_signature">
+    
+      <a href="#clear!-instance_method" title="#clear! (instance method)">#<strong>clear!</strong>  &#x21d2; Object </a>
+    
+
+    
+  </span>
+  
+  
+  
+  
+  
+  
+  
+
+  
+    <span class="summary_desc"><div class='inline'>
+<p>Hard reset: cancel all timeout tasks, discard all pending state and DLQ.</p>
+</div></span>
+  
+</li>
+
+      
+        <li class="public ">
+  <span class="summary_signature">
+    
+      <a href="#close-instance_method" title="#close (instance method)">#<strong>close</strong>  &#x21d2; Object </a>
+    
+
+    
+  </span>
+  
+  
+  
+  
+  
+  
+  
+
+  
+    <span class="summary_desc"><div class='inline'>
+<p>Close the channel.</p>
+</div></span>
+  
+</li>
+
+      
+        <li class="public ">
+  <span class="summary_signature">
+    
+      <a href="#closed%3F-instance_method" title="#closed? (instance method)">#<strong>closed?</strong>  &#x21d2; Boolean </a>
+    
+
+    
+  </span>
+  
+  
+  
+  
+  
+  
+  
+
+  
+    <span class="summary_desc"><div class='inline'></div></span>
+  
+</li>
+
+      
+        <li class="public ">
+  <span class="summary_signature">
+    
+      <a href="#initialize-instance_method" title="#initialize (instance method)">#<strong>initialize</strong>(name, type: nil, timeout: 30, max_pending: nil, stats: nil, throttle: 0.0)  &#x21d2; Channel </a>
+    
+
+    
+  </span>
+  
+  
+    <span class="note title constructor">constructor</span>
+  
+  
+  
+  
+  
+  
+
+  
+    <span class="summary_desc"><div class='inline'>
+<p>A new instance of Channel.</p>
+</div></span>
+  
+</li>
+
+      
+        <li class="public ">
+  <span class="summary_signature">
+    
+      <a href="#pending%3F-instance_method" title="#pending? (instance method)">#<strong>pending?</strong>  &#x21d2; Boolean </a>
+    
+
+    
+  </span>
+  
+  
+  
+  
+  
+  
+  
+
+  
+    <span class="summary_desc"><div class='inline'>
+<p>True when there are unresolved deliveries.</p>
+</div></span>
+  
+</li>
+
+      
+        <li class="public ">
+  <span class="summary_signature">
+    
+      <a href="#pending_count-instance_method" title="#pending_count (instance method)">#<strong>pending_count</strong>  &#x21d2; Object </a>
+    
+
+    
+  </span>
+  
+  
+  
+  
+  
+  
+  
+
+  
+    <span class="summary_desc"><div class='inline'>
+<p>Number of unresolved delivery trackers.</p>
+</div></span>
+  
+</li>
+
+      
+        <li class="public ">
+  <span class="summary_signature">
+    
+      <a href="#publish-instance_method" title="#publish (instance method)">#<strong>publish</strong>(message)  &#x21d2; DeliveryTracker </a>
+    
+
+    
+  </span>
+  
+  
+  
+  
+  
+  
+  
+
+  
+    <span class="summary_desc"><div class='inline'>
+<p>Publish a message to all current subscribers.</p>
+</div></span>
+  
+</li>
+
+      
+        <li class="public ">
+  <span class="summary_signature">
+    
+      <a href="#subscribe-instance_method" title="#subscribe (instance method)">#<strong>subscribe</strong>(&amp;block)  &#x21d2; Integer </a>
+    
+
+    
+  </span>
+  
+  
+  
+  
+  
+  
+  
+
+  
+    <span class="summary_desc"><div class='inline'>
+<p>Subscribe to messages on this channel.</p>
+</div></span>
+  
+</li>
+
+      
+        <li class="public ">
+  <span class="summary_signature">
+    
+      <a href="#subscriber_count-instance_method" title="#subscriber_count (instance method)">#<strong>subscriber_count</strong>  &#x21d2; Object </a>
+    
+
+    
+  </span>
+  
+  
+  
+  
+  
+  
+  
+
+  
+    <span class="summary_desc"><div class='inline'>
+<p>Number of active subscribers.</p>
+</div></span>
+  
+</li>
+
+      
+        <li class="public ">
+  <span class="summary_signature">
+    
+      <a href="#unsubscribe-instance_method" title="#unsubscribe (instance method)">#<strong>unsubscribe</strong>(id_or_block)  &#x21d2; Object </a>
+    
+
+    
+  </span>
+  
+  
+  
+  
+  
+  
+  
+
+  
+    <span class="summary_desc"><div class='inline'>
+<p>Remove a subscriber by id or block reference.</p>
+</div></span>
+  
+</li>
+
+      
+    </ul>
+  
+
+<div id="constructor_details" class="method_details_list">
+  <h2>Constructor Details</h2>
+  
+    <div class="method_details first">
+  <h3 class="signature first" id="initialize-instance_method">
+  
+    #<strong>initialize</strong>(name, type: nil, timeout: 30, max_pending: nil, stats: nil, throttle: 0.0)  &#x21d2; <tt><span class='object_link'><a href="" title="TypedBus::Channel (class)">Channel</a></span></tt> 
+  
+
+  
+
+  
+</h3><div class="docstring">
+  <div class="discussion">
+    
+<p>Returns a new instance of Channel.</p>
+
+
+  </div>
+</div>
+<div class="tags">
+  <p class="tag_title">Parameters:</p>
+<ul class="param">
+  
+    <li>
+      
+        <span class='name'>name</span>
+      
+      
+        <span class='type'>(<tt>Symbol</tt>)</span>
+      
+      
+      
+        &mdash;
+        <div class='inline'>
+<p>channel name</p>
+</div>
+      
+    </li>
+  
+    <li>
+      
+        <span class='name'>type</span>
+      
+      
+        <span class='type'>(<tt>Class</tt>, <tt>nil</tt>)</span>
+      
+      
+        <em class="default">(defaults to: <tt>nil</tt>)</em>
+      
+      
+        &mdash;
+        <div class='inline'>
+<p>optional type constraint for messages</p>
+</div>
+      
+    </li>
+  
+    <li>
+      
+        <span class='name'>timeout</span>
+      
+      
+        <span class='type'>(<tt>Numeric</tt>)</span>
+      
+      
+        <em class="default">(defaults to: <tt>30</tt>)</em>
+      
+      
+        &mdash;
+        <div class='inline'>
+<p>seconds before delivery auto-nacks (default: 30)</p>
+</div>
+      
+    </li>
+  
+    <li>
+      
+        <span class='name'>max_pending</span>
+      
+      
+        <span class='type'>(<tt>Integer</tt>, <tt>nil</tt>)</span>
+      
+      
+        <em class="default">(defaults to: <tt>nil</tt>)</em>
+      
+      
+        &mdash;
+        <div class='inline'>
+<p>backpressure limit (nil = unbounded)</p>
+</div>
+      
+    </li>
+  
+    <li>
+      
+        <span class='name'>stats</span>
+      
+      
+        <span class='type'>(<tt><span class='object_link'><a href="Stats.html" title="TypedBus::Stats (class)">Stats</a></span></tt>, <tt>nil</tt>)</span>
+      
+      
+        <em class="default">(defaults to: <tt>nil</tt>)</em>
+      
+      
+        &mdash;
+        <div class='inline'>
+<p>optional stats tracker for counters</p>
+</div>
+      
+    </li>
+  
+    <li>
+      
+        <span class='name'>throttle</span>
+      
+      
+        <span class='type'>(<tt>Float</tt>)</span>
+      
+      
+        <em class="default">(defaults to: <tt>0.0</tt>)</em>
+      
+      
+        &mdash;
+        <div class='inline'>
+<p>capacity ratio (0.0..1.0) at which asymptotic backoff begins (0.0 = disabled)</p>
+</div>
+      
+    </li>
+  
+</ul>
+
+
+</div><table class="source_code">
+  <tr>
+    <td>
+      <pre class="lines">
+
+
+21
+22
+23
+24
+25
+26
+27
+28
+29
+30
+31
+32
+33
+34
+35
+36
+37
+38
+39</pre>
+    </td>
+    <td>
+      <pre class="code"><span class="info file"># File 'lib/typed_bus/channel.rb', line 21</span>
+
+<span class='kw'>def</span> <span class='id identifier rubyid_initialize'>initialize</span><span class='lparen'>(</span><span class='id identifier rubyid_name'>name</span><span class='comma'>,</span> <span class='label'>type:</span> <span class='kw'>nil</span><span class='comma'>,</span> <span class='label'>timeout:</span> <span class='int'>30</span><span class='comma'>,</span> <span class='label'>max_pending:</span> <span class='kw'>nil</span><span class='comma'>,</span> <span class='label'>stats:</span> <span class='kw'>nil</span><span class='comma'>,</span> <span class='label'>throttle:</span> <span class='float'>0.0</span><span class='rparen'>)</span>
+  <span class='ivar'>@name</span>              <span class='op'>=</span> <span class='id identifier rubyid_name'>name</span>
+  <span class='ivar'>@type</span>              <span class='op'>=</span> <span class='id identifier rubyid_type'>type</span>
+  <span class='ivar'>@timeout</span>           <span class='op'>=</span> <span class='id identifier rubyid_timeout'>timeout</span>
+  <span class='ivar'>@max_pending</span>       <span class='op'>=</span> <span class='id identifier rubyid_max_pending'>max_pending</span>
+  <span class='ivar'>@stats</span>             <span class='op'>=</span> <span class='id identifier rubyid_stats'>stats</span>
+  <span class='ivar'>@throttle</span>          <span class='op'>=</span> <span class='id identifier rubyid_throttle'>throttle</span><span class='period'>.</span><span class='id identifier rubyid_to_f'>to_f</span>
+  <span class='ivar'>@subscribers</span>       <span class='op'>=</span> <span class='lbrace'>{</span><span class='rbrace'>}</span>
+  <span class='ivar'>@next_subscriber_id</span> <span class='op'>=</span> <span class='int'>0</span>
+  <span class='ivar'>@pending_deliveries</span> <span class='op'>=</span> <span class='lbrace'>{</span><span class='rbrace'>}</span>
+  <span class='ivar'>@active_deliveries</span>  <span class='op'>=</span> <span class='lbracket'>[</span><span class='rbracket'>]</span>
+  <span class='ivar'>@closed</span>            <span class='op'>=</span> <span class='kw'>false</span>
+  <span class='ivar'>@dead_letter_queue</span> <span class='op'>=</span> <span class='const'><span class='object_link'><a href="DeadLetterQueue.html" title="TypedBus::DeadLetterQueue (class)">DeadLetterQueue</a></span></span><span class='period'>.</span><span class='id identifier rubyid_new'><span class='object_link'><a href="DeadLetterQueue.html#initialize-instance_method" title="TypedBus::DeadLetterQueue#initialize (method)">new</a></span></span>
+  <span class='ivar'>@backpressure</span>      <span class='op'>=</span> <span class='const'>Async</span><span class='op'>::</span><span class='const'>Condition</span><span class='period'>.</span><span class='id identifier rubyid_new'>new</span>
+
+  <span class='id identifier rubyid_validate_throttle_config!'>validate_throttle_config!</span>
+
+  <span class='id identifier rubyid_log'>log</span><span class='lparen'>(</span><span class='symbol'>:info</span><span class='comma'>,</span> <span class='tstring'><span class='tstring_beg'>&quot;</span><span class='tstring_content'>channel created (type=</span><span class='embexpr_beg'>#{</span><span class='id identifier rubyid_type'>type</span> <span class='op'>||</span> <span class='tstring'><span class='tstring_beg'>&#39;</span><span class='tstring_content'>any</span><span class='tstring_end'>&#39;</span></span><span class='embexpr_end'>}</span><span class='tstring_content'>, timeout=</span><span class='embexpr_beg'>#{</span><span class='id identifier rubyid_timeout'>timeout</span><span class='embexpr_end'>}</span><span class='tstring_content'>s, max_pending=</span><span class='embexpr_beg'>#{</span><span class='id identifier rubyid_max_pending'>max_pending</span> <span class='op'>||</span> <span class='tstring'><span class='tstring_beg'>&#39;</span><span class='tstring_content'>unbounded</span><span class='tstring_end'>&#39;</span></span><span class='embexpr_end'>}</span><span class='tstring_content'>, throttle=</span><span class='embexpr_beg'>#{</span><span class='ivar'>@throttle</span> <span class='op'>&gt;</span> <span class='int'>0</span> <span class='op'>?</span> <span class='tstring'><span class='tstring_beg'>&quot;</span><span class='embexpr_beg'>#{</span><span class='lparen'>(</span><span class='ivar'>@throttle</span> <span class='op'>*</span> <span class='int'>100</span><span class='rparen'>)</span><span class='period'>.</span><span class='id identifier rubyid_round'>round</span><span class='embexpr_end'>}</span><span class='tstring_content'>%</span><span class='tstring_end'>&quot;</span></span> <span class='op'>:</span> <span class='tstring'><span class='tstring_beg'>&#39;</span><span class='tstring_content'>off</span><span class='tstring_end'>&#39;</span></span><span class='embexpr_end'>}</span><span class='tstring_content'>)</span><span class='tstring_end'>&quot;</span></span><span class='rparen'>)</span>
+<span class='kw'>end</span></pre>
+    </td>
+  </tr>
+</table>
+</div>
+  
+</div>
+
+  <div id="instance_attr_details" class="attr_details">
+    <h2>Instance Attribute Details</h2>
+    
+      
+      <span id=""></span>
+      <div class="method_details first">
+  <h3 class="signature first" id="dead_letter_queue-instance_method">
+  
+    #<strong>dead_letter_queue</strong>  &#x21d2; <tt>Object</tt>  <span class="extras">(readonly)</span>
+  
+
+  
+
+  
+</h3><div class="docstring">
+  <div class="discussion">
+    
+<p>Returns the value of attribute dead_letter_queue.</p>
+
+
+  </div>
+</div>
+<div class="tags">
+  
+
+</div><table class="source_code">
+  <tr>
+    <td>
+      <pre class="lines">
+
+
+13
+14
+15</pre>
+    </td>
+    <td>
+      <pre class="code"><span class="info file"># File 'lib/typed_bus/channel.rb', line 13</span>
+
+<span class='kw'>def</span> <span class='id identifier rubyid_dead_letter_queue'>dead_letter_queue</span>
+  <span class='ivar'>@dead_letter_queue</span>
+<span class='kw'>end</span></pre>
+    </td>
+  </tr>
+</table>
+</div>
+    
+      
+      <span id=""></span>
+      <div class="method_details ">
+  <h3 class="signature " id="name-instance_method">
+  
+    #<strong>name</strong>  &#x21d2; <tt>Object</tt>  <span class="extras">(readonly)</span>
+  
+
+  
+
+  
+</h3><div class="docstring">
+  <div class="discussion">
+    
+<p>Returns the value of attribute name.</p>
+
+
+  </div>
+</div>
+<div class="tags">
+  
+
+</div><table class="source_code">
+  <tr>
+    <td>
+      <pre class="lines">
+
+
+13
+14
+15</pre>
+    </td>
+    <td>
+      <pre class="code"><span class="info file"># File 'lib/typed_bus/channel.rb', line 13</span>
+
+<span class='kw'>def</span> <span class='id identifier rubyid_name'>name</span>
+  <span class='ivar'>@name</span>
+<span class='kw'>end</span></pre>
+    </td>
+  </tr>
+</table>
+</div>
+    
+      
+      <span id=""></span>
+      <div class="method_details ">
+  <h3 class="signature " id="type-instance_method">
+  
+    #<strong>type</strong>  &#x21d2; <tt>Object</tt>  <span class="extras">(readonly)</span>
+  
+
+  
+
+  
+</h3><div class="docstring">
+  <div class="discussion">
+    
+<p>Returns the value of attribute type.</p>
+
+
+  </div>
+</div>
+<div class="tags">
+  
+
+</div><table class="source_code">
+  <tr>
+    <td>
+      <pre class="lines">
+
+
+13
+14
+15</pre>
+    </td>
+    <td>
+      <pre class="code"><span class="info file"># File 'lib/typed_bus/channel.rb', line 13</span>
+
+<span class='kw'>def</span> <span class='id identifier rubyid_type'>type</span>
+  <span class='ivar'>@type</span>
+<span class='kw'>end</span></pre>
+    </td>
+  </tr>
+</table>
+</div>
+    
+  </div>
+
+
+  <div id="instance_method_details" class="method_details_list">
+    <h2>Instance Method Details</h2>
+
+    
+      <div class="method_details first">
+  <h3 class="signature first" id="clear!-instance_method">
+  
+    #<strong>clear!</strong>  &#x21d2; <tt>Object</tt> 
+  
+
+  
+
+  
+</h3><div class="docstring">
+  <div class="discussion">
+    
+<p>Hard reset: cancel all timeout tasks, discard all pending state and DLQ.</p>
+
+
+  </div>
+</div>
+<div class="tags">
+  
+
+</div><table class="source_code">
+  <tr>
+    <td>
+      <pre class="lines">
+
+
+172
+173
+174
+175
+176
+177
+178
+179</pre>
+    </td>
+    <td>
+      <pre class="code"><span class="info file"># File 'lib/typed_bus/channel.rb', line 172</span>
+
+<span class='kw'>def</span> <span class='id identifier rubyid_clear!'>clear!</span>
+  <span class='id identifier rubyid_log'>log</span><span class='lparen'>(</span><span class='symbol'>:info</span><span class='comma'>,</span> <span class='tstring'><span class='tstring_beg'>&quot;</span><span class='tstring_content'>clearing all state (active=</span><span class='embexpr_beg'>#{</span><span class='ivar'>@active_deliveries</span><span class='period'>.</span><span class='id identifier rubyid_size'>size</span><span class='embexpr_end'>}</span><span class='tstring_content'>, pending=</span><span class='embexpr_beg'>#{</span><span class='ivar'>@pending_deliveries</span><span class='period'>.</span><span class='id identifier rubyid_size'>size</span><span class='embexpr_end'>}</span><span class='tstring_content'>, dlq=</span><span class='embexpr_beg'>#{</span><span class='ivar'>@dead_letter_queue</span><span class='period'>.</span><span class='id identifier rubyid_size'>size</span><span class='embexpr_end'>}</span><span class='tstring_content'>)</span><span class='tstring_end'>&quot;</span></span><span class='rparen'>)</span>
+  <span class='ivar'>@active_deliveries</span><span class='period'>.</span><span class='id identifier rubyid_each'>each</span><span class='lparen'>(</span><span class='op'>&amp;</span><span class='symbol'>:cancel_timeout</span><span class='rparen'>)</span>
+  <span class='ivar'>@active_deliveries</span><span class='period'>.</span><span class='id identifier rubyid_clear'>clear</span>
+  <span class='ivar'>@pending_deliveries</span><span class='period'>.</span><span class='id identifier rubyid_clear'>clear</span>
+  <span class='ivar'>@dead_letter_queue</span><span class='period'>.</span><span class='id identifier rubyid_clear!'>clear!</span>
+  <span class='ivar'>@backpressure</span><span class='period'>.</span><span class='id identifier rubyid_signal'>signal</span>
+<span class='kw'>end</span></pre>
+    </td>
+  </tr>
+</table>
+</div>
+    
+      <div class="method_details ">
+  <h3 class="signature " id="close-instance_method">
+  
+    #<strong>close</strong>  &#x21d2; <tt>Object</tt> 
+  
+
+  
+
+  
+</h3><div class="docstring">
+  <div class="discussion">
+    
+<p>Close the channel. Stops accepting new publishes/subscribes. Pending deliveries are force-nacked (routed to DLQ with stats).</p>
+
+
+  </div>
+</div>
+<div class="tags">
+  
+
+</div><table class="source_code">
+  <tr>
+    <td>
+      <pre class="lines">
+
+
+157
+158
+159
+160
+161
+162
+163
+164
+165</pre>
+    </td>
+    <td>
+      <pre class="code"><span class="info file"># File 'lib/typed_bus/channel.rb', line 157</span>
+
+<span class='kw'>def</span> <span class='id identifier rubyid_close'>close</span>
+  <span class='kw'>return</span> <span class='kw'>if</span> <span class='ivar'>@closed</span>
+
+  <span class='ivar'>@closed</span> <span class='op'>=</span> <span class='kw'>true</span>
+  <span class='id identifier rubyid_pending'>pending</span> <span class='op'>=</span> <span class='ivar'>@active_deliveries</span><span class='period'>.</span><span class='id identifier rubyid_count'>count</span><span class='lparen'>(</span><span class='op'>&amp;</span><span class='symbol'>:pending?</span><span class='rparen'>)</span>
+  <span class='id identifier rubyid_log'>log</span><span class='lparen'>(</span><span class='symbol'>:info</span><span class='comma'>,</span> <span class='tstring'><span class='tstring_beg'>&quot;</span><span class='tstring_content'>closing (force-nacking </span><span class='embexpr_beg'>#{</span><span class='id identifier rubyid_pending'>pending</span><span class='embexpr_end'>}</span><span class='tstring_content'> pending deliveries)</span><span class='tstring_end'>&quot;</span></span><span class='rparen'>)</span>
+  <span class='id identifier rubyid_force_nack_pending'>force_nack_pending</span>
+  <span class='ivar'>@backpressure</span><span class='period'>.</span><span class='id identifier rubyid_signal'>signal</span>
+<span class='kw'>end</span></pre>
+    </td>
+  </tr>
+</table>
+</div>
+    
+      <div class="method_details ">
+  <h3 class="signature " id="closed?-instance_method">
+  
+    #<strong>closed?</strong>  &#x21d2; <tt>Boolean</tt> 
+  
+
+  
+
+  
+</h3><div class="docstring">
+  <div class="discussion">
+    
+
+  </div>
+</div>
+<div class="tags">
+  
+<p class="tag_title">Returns:</p>
+<ul class="return">
+  
+    <li>
+      
+      
+        <span class='type'>(<tt>Boolean</tt>)</span>
+      
+      
+      
+    </li>
+  
+</ul>
+
+</div><table class="source_code">
+  <tr>
+    <td>
+      <pre class="lines">
+
+
+167
+168
+169</pre>
+    </td>
+    <td>
+      <pre class="code"><span class="info file"># File 'lib/typed_bus/channel.rb', line 167</span>
+
+<span class='kw'>def</span> <span class='id identifier rubyid_closed?'>closed?</span>
+  <span class='ivar'>@closed</span>
+<span class='kw'>end</span></pre>
+    </td>
+  </tr>
+</table>
+</div>
+    
+      <div class="method_details ">
+  <h3 class="signature " id="pending?-instance_method">
+  
+    #<strong>pending?</strong>  &#x21d2; <tt>Boolean</tt> 
+  
+
+  
+
+  
+</h3><div class="docstring">
+  <div class="discussion">
+    
+<p>True when there are unresolved deliveries.</p>
+
+
+  </div>
+</div>
+<div class="tags">
+  
+<p class="tag_title">Returns:</p>
+<ul class="return">
+  
+    <li>
+      
+      
+        <span class='type'>(<tt>Boolean</tt>)</span>
+      
+      
+      
+    </li>
+  
+</ul>
+
+</div><table class="source_code">
+  <tr>
+    <td>
+      <pre class="lines">
+
+
+151
+152
+153</pre>
+    </td>
+    <td>
+      <pre class="code"><span class="info file"># File 'lib/typed_bus/channel.rb', line 151</span>
+
+<span class='kw'>def</span> <span class='id identifier rubyid_pending?'>pending?</span>
+  <span class='op'>!</span><span class='ivar'>@pending_deliveries</span><span class='period'>.</span><span class='id identifier rubyid_empty?'>empty?</span>
+<span class='kw'>end</span></pre>
+    </td>
+  </tr>
+</table>
+</div>
+    
+      <div class="method_details ">
+  <h3 class="signature " id="pending_count-instance_method">
+  
+    #<strong>pending_count</strong>  &#x21d2; <tt>Object</tt> 
+  
+
+  
+
+  
+</h3><div class="docstring">
+  <div class="discussion">
+    
+<p>Number of unresolved delivery trackers.</p>
+
+
+  </div>
+</div>
+<div class="tags">
+  
+
+</div><table class="source_code">
+  <tr>
+    <td>
+      <pre class="lines">
+
+
+146
+147
+148</pre>
+    </td>
+    <td>
+      <pre class="code"><span class="info file"># File 'lib/typed_bus/channel.rb', line 146</span>
+
+<span class='kw'>def</span> <span class='id identifier rubyid_pending_count'>pending_count</span>
+  <span class='ivar'>@pending_deliveries</span><span class='period'>.</span><span class='id identifier rubyid_size'>size</span>
+<span class='kw'>end</span></pre>
+    </td>
+  </tr>
+</table>
+</div>
+    
+      <div class="method_details ">
+  <h3 class="signature " id="publish-instance_method">
+  
+    #<strong>publish</strong>(message)  &#x21d2; <tt><span class='object_link'><a href="DeliveryTracker.html" title="TypedBus::DeliveryTracker (class)">DeliveryTracker</a></span></tt> 
+  
+
+  
+
+  
+</h3><div class="docstring">
+  <div class="discussion">
+    
+<p>Publish a message to all current subscribers.</p>
+
+<p>Blocks the calling fiber if the channel is bounded and at capacity.</p>
+
+
+  </div>
+</div>
+<div class="tags">
+  <p class="tag_title">Parameters:</p>
+<ul class="param">
+  
+    <li>
+      
+        <span class='name'>message</span>
+      
+      
+        <span class='type'>(<tt>Object</tt>)</span>
+      
+      
+      
+    </li>
+  
+</ul>
+
+<p class="tag_title">Returns:</p>
+<ul class="return">
+  
+    <li>
+      
+      
+        <span class='type'>(<tt><span class='object_link'><a href="DeliveryTracker.html" title="TypedBus::DeliveryTracker (class)">DeliveryTracker</a></span></tt>)</span>
+      
+      
+      
+        &mdash;
+        <div class='inline'>
+<p>the tracker for this message</p>
+</div>
+      
+    </li>
+  
+</ul>
+<p class="tag_title">Raises:</p>
+<ul class="raise">
+  
+    <li>
+      
+      
+        <span class='type'>(<tt>ArgumentError</tt>)</span>
+      
+      
+      
+        &mdash;
+        <div class='inline'>
+<p>if message doesn’t match type constraint</p>
+</div>
+      
+    </li>
+  
+    <li>
+      
+      
+        <span class='type'>(<tt>RuntimeError</tt>)</span>
+      
+      
+      
+        &mdash;
+        <div class='inline'>
+<p>if channel is closed</p>
+</div>
+      
+    </li>
+  
+</ul>
+
+</div><table class="source_code">
+  <tr>
+    <td>
+      <pre class="lines">
+
+
+49
+50
+51
+52
+53
+54
+55
+56
+57
+58
+59
+60
+61
+62
+63
+64
+65
+66
+67
+68
+69
+70
+71
+72
+73
+74
+75
+76
+77
+78
+79
+80
+81
+82
+83
+84
+85
+86
+87
+88
+89
+90
+91
+92
+93
+94
+95
+96
+97
+98
+99
+100
+101
+102
+103
+104
+105
+106
+107
+108
+109
+110</pre>
+    </td>
+    <td>
+      <pre class="code"><span class="info file"># File 'lib/typed_bus/channel.rb', line 49</span>
+
+<span class='kw'>def</span> <span class='id identifier rubyid_publish'>publish</span><span class='lparen'>(</span><span class='id identifier rubyid_message'>message</span><span class='rparen'>)</span>
+  <span class='id identifier rubyid_raise'>raise</span> <span class='tstring'><span class='tstring_beg'>&quot;</span><span class='tstring_content'>Channel :</span><span class='embexpr_beg'>#{</span><span class='ivar'>@name</span><span class='embexpr_end'>}</span><span class='tstring_content'> is closed</span><span class='tstring_end'>&quot;</span></span> <span class='kw'>if</span> <span class='ivar'>@closed</span>
+
+  <span class='id identifier rubyid_validate_type!'>validate_type!</span><span class='lparen'>(</span><span class='id identifier rubyid_message'>message</span><span class='rparen'>)</span>
+  <span class='id identifier rubyid_apply_throttle!'>apply_throttle!</span> <span class='kw'>if</span> <span class='id identifier rubyid_throttled?'>throttled?</span>
+  <span class='id identifier rubyid_wait_for_capacity'>wait_for_capacity</span> <span class='kw'>if</span> <span class='id identifier rubyid_bounded?'>bounded?</span>
+
+  <span class='id identifier rubyid_subscriber_ids'>subscriber_ids</span> <span class='op'>=</span> <span class='ivar'>@subscribers</span><span class='period'>.</span><span class='id identifier rubyid_keys'>keys</span>
+
+  <span class='kw'>if</span> <span class='id identifier rubyid_subscriber_ids'>subscriber_ids</span><span class='period'>.</span><span class='id identifier rubyid_empty?'>empty?</span>
+    <span class='id identifier rubyid_log'>log</span><span class='lparen'>(</span><span class='symbol'>:warn</span><span class='comma'>,</span> <span class='tstring'><span class='tstring_beg'>&quot;</span><span class='tstring_content'>published with no subscribers, routing to DLQ (message=</span><span class='embexpr_beg'>#{</span><span class='id identifier rubyid_message'>message</span><span class='period'>.</span><span class='id identifier rubyid_class'>class</span><span class='embexpr_end'>}</span><span class='tstring_content'>)</span><span class='tstring_end'>&quot;</span></span><span class='rparen'>)</span>
+    <span class='id identifier rubyid_dead_letter_no_subscribers'>dead_letter_no_subscribers</span><span class='lparen'>(</span><span class='id identifier rubyid_message'>message</span><span class='rparen'>)</span>
+    <span class='kw'>return</span> <span class='kw'>nil</span>
+  <span class='kw'>end</span>
+
+  <span class='id identifier rubyid_log'>log</span><span class='lparen'>(</span><span class='symbol'>:info</span><span class='comma'>,</span> <span class='tstring'><span class='tstring_beg'>&quot;</span><span class='tstring_content'>published message (type=</span><span class='embexpr_beg'>#{</span><span class='id identifier rubyid_message'>message</span><span class='period'>.</span><span class='id identifier rubyid_class'>class</span><span class='embexpr_end'>}</span><span class='tstring_content'>, subscribers=</span><span class='embexpr_beg'>#{</span><span class='id identifier rubyid_subscriber_ids'>subscriber_ids</span><span class='period'>.</span><span class='id identifier rubyid_size'>size</span><span class='embexpr_end'>}</span><span class='tstring_content'>)</span><span class='tstring_end'>&quot;</span></span><span class='rparen'>)</span>
+
+  <span class='id identifier rubyid_tracker'>tracker</span> <span class='op'>=</span> <span class='const'><span class='object_link'><a href="DeliveryTracker.html" title="TypedBus::DeliveryTracker (class)">DeliveryTracker</a></span></span><span class='period'>.</span><span class='id identifier rubyid_new'><span class='object_link'><a href="DeliveryTracker.html#initialize-instance_method" title="TypedBus::DeliveryTracker#initialize (method)">new</a></span></span><span class='lparen'>(</span><span class='id identifier rubyid_message'>message</span><span class='comma'>,</span> <span class='label'>channel_name:</span> <span class='ivar'>@name</span><span class='comma'>,</span> <span class='label'>subscriber_ids:</span> <span class='id identifier rubyid_subscriber_ids'>subscriber_ids</span><span class='rparen'>)</span>
+  <span class='ivar'>@pending_deliveries</span><span class='lbracket'>[</span><span class='id identifier rubyid_tracker'>tracker</span><span class='period'>.</span><span class='id identifier rubyid_object_id'>object_id</span><span class='rbracket'>]</span> <span class='op'>=</span> <span class='id identifier rubyid_tracker'>tracker</span>
+
+  <span class='id identifier rubyid_tracker'>tracker</span><span class='period'>.</span><span class='id identifier rubyid_on_complete'>on_complete</span> <span class='lbrace'>{</span> <span class='id identifier rubyid_record_stat'>record_stat</span><span class='lparen'>(</span><span class='symbol'>:delivered</span><span class='rparen'>)</span> <span class='rbrace'>}</span>
+  <span class='id identifier rubyid_tracker'>tracker</span><span class='period'>.</span><span class='id identifier rubyid_on_resolved'>on_resolved</span> <span class='lbrace'>{</span> <span class='id identifier rubyid_tracker_resolved'>tracker_resolved</span><span class='lparen'>(</span><span class='id identifier rubyid_tracker'>tracker</span><span class='rparen'>)</span> <span class='rbrace'>}</span>
+
+  <span class='id identifier rubyid_subscriber_ids'>subscriber_ids</span><span class='period'>.</span><span class='id identifier rubyid_each'>each</span> <span class='kw'>do</span> <span class='op'>|</span><span class='id identifier rubyid_sub_id'>sub_id</span><span class='op'>|</span>
+    <span class='id identifier rubyid_handler'>handler</span> <span class='op'>=</span> <span class='ivar'>@subscribers</span><span class='lbracket'>[</span><span class='id identifier rubyid_sub_id'>sub_id</span><span class='rbracket'>]</span>
+    <span class='kw'>next</span> <span class='kw'>unless</span> <span class='id identifier rubyid_handler'>handler</span>
+
+    <span class='id identifier rubyid_delivery'>delivery</span> <span class='op'>=</span> <span class='const'><span class='object_link'><a href="Delivery.html" title="TypedBus::Delivery (class)">Delivery</a></span></span><span class='period'>.</span><span class='id identifier rubyid_new'><span class='object_link'><a href="Delivery.html#initialize-instance_method" title="TypedBus::Delivery#initialize (method)">new</a></span></span><span class='lparen'>(</span>
+      <span class='id identifier rubyid_message'>message</span><span class='comma'>,</span>
+      <span class='label'>channel_name:</span> <span class='ivar'>@name</span><span class='comma'>,</span>
+      <span class='label'>subscriber_id:</span> <span class='id identifier rubyid_sub_id'>sub_id</span><span class='comma'>,</span>
+      <span class='label'>timeout:</span> <span class='ivar'>@timeout</span><span class='comma'>,</span>
+      <span class='label'>on_ack:</span> <span class='tlambda'>-&gt;</span><span class='lparen'>(</span><span class='id identifier rubyid__id'>_id</span><span class='rparen'>)</span> <span class='tlambeg'>{</span>
+        <span class='ivar'>@active_deliveries</span><span class='period'>.</span><span class='id identifier rubyid_delete'>delete</span><span class='lparen'>(</span><span class='id identifier rubyid_delivery'>delivery</span><span class='rparen'>)</span>
+        <span class='id identifier rubyid_tracker'>tracker</span><span class='period'>.</span><span class='id identifier rubyid_ack'>ack</span><span class='lparen'>(</span><span class='id identifier rubyid_sub_id'>sub_id</span><span class='rparen'>)</span>
+      <span class='rbrace'>}</span><span class='comma'>,</span>
+      <span class='label'>on_nack:</span> <span class='tlambda'>-&gt;</span><span class='lparen'>(</span><span class='id identifier rubyid__id'>_id</span><span class='rparen'>)</span> <span class='tlambeg'>{</span>
+        <span class='ivar'>@active_deliveries</span><span class='period'>.</span><span class='id identifier rubyid_delete'>delete</span><span class='lparen'>(</span><span class='id identifier rubyid_delivery'>delivery</span><span class='rparen'>)</span>
+        <span class='id identifier rubyid_tracker'>tracker</span><span class='period'>.</span><span class='id identifier rubyid_nack'>nack</span><span class='lparen'>(</span><span class='id identifier rubyid_sub_id'>sub_id</span><span class='rparen'>)</span>
+        <span class='ivar'>@dead_letter_queue</span><span class='period'>.</span><span class='id identifier rubyid_push'>push</span><span class='lparen'>(</span><span class='id identifier rubyid_delivery'>delivery</span><span class='rparen'>)</span>
+        <span class='id identifier rubyid_record_stat'>record_stat</span><span class='lparen'>(</span><span class='symbol'>:dead_lettered</span><span class='rparen'>)</span>
+        <span class='kw'>if</span> <span class='id identifier rubyid_delivery'>delivery</span><span class='period'>.</span><span class='id identifier rubyid_timed_out?'>timed_out?</span>
+          <span class='id identifier rubyid_record_stat'>record_stat</span><span class='lparen'>(</span><span class='symbol'>:timed_out</span><span class='rparen'>)</span>
+        <span class='kw'>else</span>
+          <span class='id identifier rubyid_record_stat'>record_stat</span><span class='lparen'>(</span><span class='symbol'>:nacked</span><span class='rparen'>)</span>
+        <span class='kw'>end</span>
+      <span class='rbrace'>}</span>
+    <span class='rparen'>)</span>
+
+    <span class='ivar'>@active_deliveries</span> <span class='op'>&lt;&lt;</span> <span class='id identifier rubyid_delivery'>delivery</span>
+    <span class='id identifier rubyid_log'>log</span><span class='lparen'>(</span><span class='symbol'>:debug</span><span class='comma'>,</span> <span class='tstring'><span class='tstring_beg'>&quot;</span><span class='tstring_content'>notifying subscriber #</span><span class='embexpr_beg'>#{</span><span class='id identifier rubyid_sub_id'>sub_id</span><span class='embexpr_end'>}</span><span class='tstring_content'> (message=</span><span class='embexpr_beg'>#{</span><span class='id identifier rubyid_message'>message</span><span class='period'>.</span><span class='id identifier rubyid_class'>class</span><span class='embexpr_end'>}</span><span class='tstring_content'>)</span><span class='tstring_end'>&quot;</span></span><span class='rparen'>)</span>
+
+    <span class='const'>Async</span> <span class='kw'>do</span>
+      <span class='id identifier rubyid_handler'>handler</span><span class='period'>.</span><span class='id identifier rubyid_call'>call</span><span class='lparen'>(</span><span class='id identifier rubyid_delivery'>delivery</span><span class='rparen'>)</span>
+    <span class='kw'>rescue</span> <span class='const'>StandardError</span> <span class='op'>=&gt;</span> <span class='id identifier rubyid_e'>e</span>
+      <span class='id identifier rubyid_log'>log</span><span class='lparen'>(</span><span class='symbol'>:error</span><span class='comma'>,</span> <span class='tstring'><span class='tstring_beg'>&quot;</span><span class='tstring_content'>subscriber #</span><span class='embexpr_beg'>#{</span><span class='id identifier rubyid_sub_id'>sub_id</span><span class='embexpr_end'>}</span><span class='tstring_content'> raised </span><span class='embexpr_beg'>#{</span><span class='id identifier rubyid_e'>e</span><span class='period'>.</span><span class='id identifier rubyid_class'>class</span><span class='embexpr_end'>}</span><span class='tstring_content'>: </span><span class='embexpr_beg'>#{</span><span class='id identifier rubyid_e'>e</span><span class='period'>.</span><span class='id identifier rubyid_message'>message</span><span class='embexpr_end'>}</span><span class='tstring_end'>&quot;</span></span><span class='rparen'>)</span>
+      <span class='id identifier rubyid_delivery'>delivery</span><span class='period'>.</span><span class='id identifier rubyid_nack!'>nack!</span> <span class='kw'>if</span> <span class='id identifier rubyid_delivery'>delivery</span><span class='period'>.</span><span class='id identifier rubyid_pending?'>pending?</span>
+    <span class='kw'>end</span>
+  <span class='kw'>end</span>
+
+  <span class='id identifier rubyid_tracker'>tracker</span>
+<span class='kw'>end</span></pre>
+    </td>
+  </tr>
+</table>
+</div>
+    
+      <div class="method_details ">
+  <h3 class="signature " id="subscribe-instance_method">
+  
+    #<strong>subscribe</strong>(&amp;block)  &#x21d2; <tt>Integer</tt> 
+  
+
+  
+
+  
+</h3><div class="docstring">
+  <div class="discussion">
+    
+<p>Subscribe to messages on this channel. The block receives a <code>Delivery</code> object.</p>
+
+
+  </div>
+</div>
+<div class="tags">
+  
+<p class="tag_title">Returns:</p>
+<ul class="return">
+  
+    <li>
+      
+      
+        <span class='type'>(<tt>Integer</tt>)</span>
+      
+      
+      
+        &mdash;
+        <div class='inline'>
+<p>subscriber id (use for unsubscribe)</p>
+</div>
+      
+    </li>
+  
+</ul>
+
+</div><table class="source_code">
+  <tr>
+    <td>
+      <pre class="lines">
+
+
+116
+117
+118
+119
+120
+121
+122
+123</pre>
+    </td>
+    <td>
+      <pre class="code"><span class="info file"># File 'lib/typed_bus/channel.rb', line 116</span>
+
+<span class='kw'>def</span> <span class='id identifier rubyid_subscribe'>subscribe</span><span class='lparen'>(</span><span class='op'>&amp;</span><span class='id identifier rubyid_block'>block</span><span class='rparen'>)</span>
+  <span class='id identifier rubyid_raise'>raise</span> <span class='tstring'><span class='tstring_beg'>&quot;</span><span class='tstring_content'>Channel :</span><span class='embexpr_beg'>#{</span><span class='ivar'>@name</span><span class='embexpr_end'>}</span><span class='tstring_content'> is closed</span><span class='tstring_end'>&quot;</span></span> <span class='kw'>if</span> <span class='ivar'>@closed</span>
+
+  <span class='id identifier rubyid_id'>id</span> <span class='op'>=</span> <span class='id identifier rubyid_next_subscriber_id'>next_subscriber_id</span>
+  <span class='ivar'>@subscribers</span><span class='lbracket'>[</span><span class='id identifier rubyid_id'>id</span><span class='rbracket'>]</span> <span class='op'>=</span> <span class='id identifier rubyid_block'>block</span>
+  <span class='id identifier rubyid_log'>log</span><span class='lparen'>(</span><span class='symbol'>:info</span><span class='comma'>,</span> <span class='tstring'><span class='tstring_beg'>&quot;</span><span class='tstring_content'>subscriber #</span><span class='embexpr_beg'>#{</span><span class='id identifier rubyid_id'>id</span><span class='embexpr_end'>}</span><span class='tstring_content'> registered (total=</span><span class='embexpr_beg'>#{</span><span class='ivar'>@subscribers</span><span class='period'>.</span><span class='id identifier rubyid_size'>size</span><span class='embexpr_end'>}</span><span class='tstring_content'>)</span><span class='tstring_end'>&quot;</span></span><span class='rparen'>)</span>
+  <span class='id identifier rubyid_id'>id</span>
+<span class='kw'>end</span></pre>
+    </td>
+  </tr>
+</table>
+</div>
+    
+      <div class="method_details ">
+  <h3 class="signature " id="subscriber_count-instance_method">
+  
+    #<strong>subscriber_count</strong>  &#x21d2; <tt>Object</tt> 
+  
+
+  
+
+  
+</h3><div class="docstring">
+  <div class="discussion">
+    
+<p>Number of active subscribers.</p>
+
+
+  </div>
+</div>
+<div class="tags">
+  
+
+</div><table class="source_code">
+  <tr>
+    <td>
+      <pre class="lines">
+
+
+141
+142
+143</pre>
+    </td>
+    <td>
+      <pre class="code"><span class="info file"># File 'lib/typed_bus/channel.rb', line 141</span>
+
+<span class='kw'>def</span> <span class='id identifier rubyid_subscriber_count'>subscriber_count</span>
+  <span class='ivar'>@subscribers</span><span class='period'>.</span><span class='id identifier rubyid_size'>size</span>
+<span class='kw'>end</span></pre>
+    </td>
+  </tr>
+</table>
+</div>
+    
+      <div class="method_details ">
+  <h3 class="signature " id="unsubscribe-instance_method">
+  
+    #<strong>unsubscribe</strong>(id_or_block)  &#x21d2; <tt>Object</tt> 
+  
+
+  
+
+  
+</h3><div class="docstring">
+  <div class="discussion">
+    
+<p>Remove a subscriber by id or block reference.</p>
+
+
+  </div>
+</div>
+<div class="tags">
+  <p class="tag_title">Parameters:</p>
+<ul class="param">
+  
+    <li>
+      
+        <span class='name'>id_or_block</span>
+      
+      
+        <span class='type'>(<tt>Integer</tt>, <tt>Proc</tt>)</span>
+      
+      
+      
+    </li>
+  
+</ul>
+
+
+</div><table class="source_code">
+  <tr>
+    <td>
+      <pre class="lines">
+
+
+128
+129
+130
+131
+132
+133
+134
+135
+136
+137
+138</pre>
+    </td>
+    <td>
+      <pre class="code"><span class="info file"># File 'lib/typed_bus/channel.rb', line 128</span>
+
+<span class='kw'>def</span> <span class='id identifier rubyid_unsubscribe'>unsubscribe</span><span class='lparen'>(</span><span class='id identifier rubyid_id_or_block'>id_or_block</span><span class='rparen'>)</span>
+  <span class='kw'>case</span> <span class='id identifier rubyid_id_or_block'>id_or_block</span>
+  <span class='kw'>when</span> <span class='const'>Integer</span>
+    <span class='ivar'>@subscribers</span><span class='period'>.</span><span class='id identifier rubyid_delete'>delete</span><span class='lparen'>(</span><span class='id identifier rubyid_id_or_block'>id_or_block</span><span class='rparen'>)</span>
+    <span class='id identifier rubyid_log'>log</span><span class='lparen'>(</span><span class='symbol'>:info</span><span class='comma'>,</span> <span class='tstring'><span class='tstring_beg'>&quot;</span><span class='tstring_content'>subscriber #</span><span class='embexpr_beg'>#{</span><span class='id identifier rubyid_id_or_block'>id_or_block</span><span class='embexpr_end'>}</span><span class='tstring_content'> unsubscribed (remaining=</span><span class='embexpr_beg'>#{</span><span class='ivar'>@subscribers</span><span class='period'>.</span><span class='id identifier rubyid_size'>size</span><span class='embexpr_end'>}</span><span class='tstring_content'>)</span><span class='tstring_end'>&quot;</span></span><span class='rparen'>)</span>
+  <span class='kw'>else</span>
+    <span class='id identifier rubyid_before'>before</span> <span class='op'>=</span> <span class='ivar'>@subscribers</span><span class='period'>.</span><span class='id identifier rubyid_size'>size</span>
+    <span class='ivar'>@subscribers</span><span class='period'>.</span><span class='id identifier rubyid_delete_if'>delete_if</span> <span class='lbrace'>{</span> <span class='op'>|</span><span class='id identifier rubyid__'>_</span><span class='comma'>,</span> <span class='id identifier rubyid_v'>v</span><span class='op'>|</span> <span class='id identifier rubyid_v'>v</span> <span class='op'>==</span> <span class='id identifier rubyid_id_or_block'>id_or_block</span> <span class='rbrace'>}</span>
+    <span class='id identifier rubyid_log'>log</span><span class='lparen'>(</span><span class='symbol'>:info</span><span class='comma'>,</span> <span class='tstring'><span class='tstring_beg'>&quot;</span><span class='tstring_content'>subscriber unsubscribed by reference (removed=</span><span class='embexpr_beg'>#{</span><span class='id identifier rubyid_before'>before</span> <span class='op'>-</span> <span class='ivar'>@subscribers</span><span class='period'>.</span><span class='id identifier rubyid_size'>size</span><span class='embexpr_end'>}</span><span class='tstring_content'>, remaining=</span><span class='embexpr_beg'>#{</span><span class='ivar'>@subscribers</span><span class='period'>.</span><span class='id identifier rubyid_size'>size</span><span class='embexpr_end'>}</span><span class='tstring_content'>)</span><span class='tstring_end'>&quot;</span></span><span class='rparen'>)</span>
+  <span class='kw'>end</span>
+<span class='kw'>end</span></pre>
+    </td>
+  </tr>
+</table>
+</div>
+    
+  </div>
+
+</div>
+
+      <div id="footer">
+  Generated on Sat Feb  7 05:13:55 2026 by
+  <a href="https://yardoc.org" title="Yay! A Ruby Documentation Tool" target="_parent">yard</a>
+  0.9.38 (ruby-3.3.10).
+</div>
+
+    </div>
+  </body>
+</html>
