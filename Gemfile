@@ -11,5 +11,6 @@ group :development, :test do
   gem "irb"
   gem "rake"
   gem "minitest"
+  gem "ratatui_ruby"
   gem "simplecov", require: false
 end
