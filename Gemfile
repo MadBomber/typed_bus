@@ -7,6 +7,7 @@ gemspec
 
 group :development, :test do
   gem 'aigcm'
+  gem 'debug_me'
   gem "irb"
   gem "rake"
   gem "minitest"
