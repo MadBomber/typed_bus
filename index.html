@@ -1560,17 +1560,6 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#features" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Features
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
   <a href="#quick-example" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1643,19 +1632,29 @@
 
 
 <h1 id="typedbus">TypedBus<a class="headerlink" href="#typedbus" title="Permanent link">&para;</a></h1>
-<p>Async pub/sub message bus with typed channels, ACK-based delivery, and dead letter queues for Ruby.</p>
-<p>Built on the <a href="https://github.com/socketry/async">async</a> gem with fiber-only concurrency. No mutexes, no threads. All state lives within a single Async reactor.</p>
-<h2 id="features">Features<a class="headerlink" href="#features" title="Permanent link">&para;</a></h2>
-<ul>
-<li><strong>Typed channels</strong> — constrain messages to a specific class; mismatches raise at the publish site</li>
-<li><strong>Explicit acknowledgment</strong> — subscribers must <code>ack!</code> or <code>nack!</code> each delivery</li>
-<li><strong>Dead letter queues</strong> — failed and timed-out deliveries collect for inspection or retry</li>
-<li><strong>Backpressure</strong> — bounded channels block publishers when capacity is reached</li>
-<li><strong>Adaptive throttling</strong> — asymptotic backoff slows publishers as channels fill</li>
-<li><strong>Three-tier configuration</strong> — global, bus, and channel-level defaults with cascading inheritance</li>
-<li><strong>Per-channel stats</strong> — published, delivered, nacked, timed_out, dead_lettered, throttled</li>
-<li><strong>Structured logging</strong> — optional Ruby Logger integration across all components</li>
-</ul>
+<p><em>Async pub/sub with typed channels and ACK-based delivery</em></p>
+<table>
+<tr>
+<td width="50%" align="center" valign="top">
+<img src="assets/images/typed_bus.gif" alt="TypedBus" width="875"><br>
+<a href="https://github.com/madbomber/typed_bus">GitHub Repository</a>
+</td>
+<td width="50%" valign="top">
+TypedBus provides named, optionally typed pub/sub channels with explicit ACK/NACK delivery, dead letter queues, backpressure, and adaptive throttling — all within a single Async reactor.<br><br>
+<strong>Key Features</strong><br>
+
+- <strong>Typed Channels</strong> - Restrict messages to a specific class<br>
+- <strong>ACK-Based Delivery</strong> - Subscribers must explicitly ack or nack<br>
+- <strong>Dead Letter Queues</strong> - Collect nacked and timed-out deliveries<br>
+- <strong>Backpressure</strong> - Bound pending deliveries per channel<br>
+- <strong>Adaptive Throttling</strong> - Progressive slowdown as capacity fills<br>
+- <strong>Configuration Cascade</strong> - Global → Bus → Channel defaults<br>
+- <strong>Stats Tracking</strong> - Per-channel publish/deliver/nack/timeout counters<br>
+- <strong>Structured Logging</strong> - Optional Logger integration across all components
+</td>
+</tr>
+</table>
+
 <h2 id="quick-example">Quick Example<a class="headerlink" href="#quick-example" title="Permanent link">&para;</a></h2>
 <div class="language-ruby highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nb">require</span><span class="w"> </span><span class="s2">&quot;typed_bus&quot;</span>
 </span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>
