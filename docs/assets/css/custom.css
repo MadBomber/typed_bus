@@ -1,0 +1,11 @@
+/* TypedBus documentation custom styles */
+
+/* Slightly tighter code blocks */
+.md-typeset code {
+  font-size: 0.85em;
+}
+
+/* Mermaid diagram centering */
+.md-typeset .mermaid {
+  text-align: center;
+}

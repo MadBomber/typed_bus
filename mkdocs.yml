@@ -1,0 +1,183 @@
+# MkDocs Configuration for TypedBus Documentation
+site_name: TypedBus
+site_description: Async pub/sub message bus with typed channels, ACK-based delivery, and dead letter queues for Ruby
+site_author: Dewayne VanHoozer
+site_url: https://madbomber.github.io/typed_bus
+copyright: Copyright &copy; 2025 Dewayne VanHoozer
+
+# Repository information
+repo_name: MadBomber/typed_bus
+repo_url: https://github.com/MadBomber/typed_bus
+edit_uri: edit/main/docs/
+
+# Configuration
+theme:
+  name: material
+
+  # Color scheme
+  palette:
+    - scheme: default
+      primary: teal
+      accent: amber
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+
+    - scheme: slate
+      primary: teal
+      accent: amber
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+
+  # Typography
+  font:
+    text: Roboto
+    code: Roboto Mono
+
+  # Logo and icon
+  icon:
+    repo: fontawesome/brands/github
+    logo: material/bus-multiple
+
+  # Theme features
+  features:
+    - navigation.instant
+    - navigation.tracking
+    - navigation.tabs
+    - navigation.tabs.sticky
+    - navigation.path
+    - navigation.indexes
+    - navigation.top
+    - navigation.footer
+    - toc.follow
+    - search.suggest
+    - search.highlight
+    - search.share
+    - header.autohide
+    - content.code.copy
+    - content.code.annotate
+    - content.tabs.link
+    - content.tooltips
+    - content.action.edit
+    - content.action.view
+
+# Plugins
+plugins:
+  - search:
+      separator: '[\s\-,:!=\[\]()"`/]+|\.(?!\d)|&[lg]t;|(?!\b)(?=[A-Z][a-z])'
+  - tags
+
+# Extensions
+markdown_extensions:
+  - abbr
+  - admonition
+  - attr_list
+  - def_list
+  - footnotes
+  - md_in_html
+  - tables
+  - toc:
+      permalink: true
+      title: On this page
+
+  - pymdownx.arithmatex:
+      generic: true
+  - pymdownx.betterem:
+      smart_enable: all
+  - pymdownx.caret
+  - pymdownx.critic
+  - pymdownx.details
+  - pymdownx.emoji:
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+  - pymdownx.highlight:
+      anchor_linenums: true
+      line_spans: __span
+      pygments_lang_class: true
+  - pymdownx.inlinehilite
+  - pymdownx.keys
+  - pymdownx.magiclink:
+      repo_url_shorthand: true
+      user: MadBomber
+      repo: typed_bus
+      normalize_issue_symbols: true
+  - pymdownx.mark
+  - pymdownx.smartsymbols
+  - pymdownx.snippets:
+      check_paths: true
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.tasklist:
+      custom_checkbox: true
+  - pymdownx.tilde
+
+# Extra CSS
+extra_css:
+  - assets/css/custom.css
+
+# Social media and extra configuration
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/MadBomber/typed_bus
+      name: TypedBus on GitHub
+    - icon: fontawesome/solid/gem
+      link: https://rubygems.org/gems/typed_bus
+      name: TypedBus on RubyGems
+
+  analytics:
+    feedback:
+      title: Was this page helpful?
+      ratings:
+        - icon: material/emoticon-happy-outline
+          name: This page was helpful
+          data: 1
+          note: Thanks for your feedback!
+        - icon: material/emoticon-sad-outline
+          name: This page could be improved
+          data: 0
+          note: Thanks for your feedback! Help us improve by creating an issue.
+
+# Navigation
+nav:
+  - Home:
+      - Overview: index.md
+      - Concepts: concepts.md
+  - Getting Started:
+      - getting-started/index.md
+      - Installation: getting-started/installation.md
+      - Quick Start: getting-started/quick-start.md
+      - Configuration: getting-started/configuration.md
+  - Architecture:
+      - architecture/index.md
+      - Publish Flow: architecture/publish-flow.md
+      - Concurrency Model: architecture/concurrency-model.md
+      - Configuration Cascade: architecture/configuration-cascade.md
+  - Guides:
+      - guides/index.md
+      - Typed Channels: guides/typed-channels.md
+      - Delivery and Acknowledgment: guides/delivery-and-ack.md
+      - Dead Letter Queues: guides/dead-letter-queues.md
+      - Backpressure: guides/backpressure.md
+      - Adaptive Throttling: guides/adaptive-throttling.md
+      - Stats and Monitoring: guides/stats-and-monitoring.md
+      - Logging: guides/logging.md
+      - Error Handling: guides/error-handling.md
+      - Graceful Shutdown: guides/graceful-shutdown.md
+  - API Reference:
+      - api/index.md
+      - Configuration: api/configuration.md
+      - MessageBus: api/message-bus.md
+      - Channel: api/channel.md
+      - Delivery: api/delivery.md
+      - DeliveryTracker: api/delivery-tracker.md
+      - DeadLetterQueue: api/dead-letter-queue.md
+      - Stats: api/stats.md
+  - Examples:
+      - examples/index.md
