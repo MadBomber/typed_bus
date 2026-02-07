@@ -195,6 +195,57 @@ TypedBus::Channel.new(:conservative, max_pending: 100, throttle: 0.8)  # backoff
 TypedBus::Channel.new(:aggressive,   max_pending: 100, throttle: 0.3)  # backoff at 30% remaining
 ```
 
+## Configuration
+
+TypedBus resolves parameters through a three-tier cascade: **Global → Bus → Channel**. Each tier inherits from the one above unless explicitly overridden.
+
+| Parameter | Default | Description |
+|-----------|---------|-------------|
+| `timeout` | `30` | Delivery ACK deadline in seconds |
+| `max_pending` | `nil` | Backpressure limit; `nil` = unbounded |
+| `throttle` | `0.0` | Remaining-capacity ratio where backoff begins; `0.0` = disabled |
+| `logger` | `nil` | Ruby Logger instance (global-only) |
+| `log_level` | `Logger::INFO` | Log level applied to the logger (global-only) |
+
+### Global Defaults
+
+```ruby
+TypedBus.configure do |config|
+  config.timeout     = 60
+  config.max_pending = 500
+  config.throttle    = 0.5
+  config.logger      = Logger.new($stdout)
+  config.log_level   = Logger::DEBUG
+end
+```
+
+### Cascade Example
+
+```ruby
+# Global: timeout=60, max_pending=500
+TypedBus.configure do |config|
+  config.timeout     = 60
+  config.max_pending = 500
+end
+
+# Bus overrides timeout, inherits max_pending
+bus = TypedBus::MessageBus.new(timeout: 30)
+
+# Channel inherits both from bus (timeout=30, max_pending=500)
+bus.add_channel(:orders)
+
+# Channel overrides timeout, inherits max_pending from bus
+bus.add_channel(:alerts, timeout: 5)
+```
+
+### Reset
+
+Restore factory defaults (useful in tests):
+
+```ruby
+TypedBus.reset_configuration!
+```
+
 ## MessageBus
 
 `MessageBus` is a registry facade that manages multiple named channels with shared stats.
@@ -213,21 +264,21 @@ Async do
 end
 ```
 
-### Bus-Level Throttle Default
+### Bus-Level Defaults
 
-Set a default `throttle` that applies to every channel added to the bus:
+Pass `timeout`, `max_pending`, or `throttle` to the constructor to set defaults for all channels on this bus:
 
 ```ruby
-bus = TypedBus::MessageBus.new(throttle: 0.5)
+bus = TypedBus::MessageBus.new(timeout: 10, max_pending: 200, throttle: 0.5)
 
-# Inherits throttle: 0.5
-bus.add_channel(:orders, max_pending: 100, timeout: 10)
+# Inherits all bus defaults
+bus.add_channel(:orders, type: Order)
 
-# Overrides with a different threshold
-bus.add_channel(:alerts, max_pending: 20, timeout: 5, throttle: 0.3)
+# Overrides throttle, inherits timeout and max_pending
+bus.add_channel(:alerts, throttle: 0.3)
 
 # Disables throttle for this channel
-bus.add_channel(:logs, max_pending: 50, timeout: 5, throttle: 0.0)
+bus.add_channel(:logs, throttle: 0.0)
 ```
 
 ### Bus Methods
@@ -277,8 +328,11 @@ channel = TypedBus::Channel.new(:work, stats: stats, timeout: 5)
 Assign a standard Ruby `Logger` to get structured log output from all components:
 
 ```ruby
-require "logger"
+TypedBus.configure do |config|
+  config.logger = Logger.new($stdout)
+end
 
+# or use the shortcut
 TypedBus.logger = Logger.new($stdout)
 ```
 

@@ -10,6 +10,7 @@ ruby -Ilib examples/01_basic_usage.rb
 
 | # | File | Description |
 |---|------|-------------|
+| 00 | `00_config.rb` | Three-tier configuration cascade. Shows `TypedBus.configure` for global defaults, bus-level overrides, and per-channel overrides with inheritance and `reset_configuration!`. |
 | 01 | `01_basic_usage.rb` | Basic pub/sub with explicit acknowledgment. One channel, one subscriber, `ack!` after each message. |
 | 02 | `02_typed_channels.rb` | Type-constrained channels. Publishing the wrong type raises `ArgumentError` at the publish site. |
 | 03 | `03_multiple_subscribers.rb` | Fan-out delivery. Every subscriber gets its own `Delivery`; a message is only "delivered" when all subscribers ack. Shows `DeliveryTracker` state queries. |

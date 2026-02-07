@@ -15,32 +15,44 @@ module TypedBus
   #   Async { bus.publish(:events, MyEvent.new(...)) }
   #
   class MessageBus
-    attr_reader :stats
+    attr_reader :stats, :config
 
-    # @param throttle [Float] default throttle threshold for all channels (0.0 = disabled)
-    def initialize(throttle: 0.0)
+    # @param timeout [Numeric, Symbol] delivery ACK deadline (overrides global default)
+    # @param max_pending [Integer, nil, Symbol] backpressure limit (overrides global default)
+    # @param throttle [Float, Symbol] default throttle threshold for all channels (overrides global default)
+    def initialize(timeout: :use_default, max_pending: :use_default, throttle: :use_default)
+      global  = TypedBus.configuration
+      @config = global.dup
+      resolved = global.resolve(timeout: timeout, max_pending: max_pending, throttle: throttle)
+      @config.timeout     = resolved[:timeout]
+      @config.max_pending = resolved[:max_pending]
+      @config.throttle    = resolved[:throttle]
+
       @channels = {}
       @stats = Stats.new
-      @default_throttle = throttle.to_f
-      log(:info, "message bus initialized (default_throttle=#{@default_throttle > 0 ? "#{(@default_throttle * 100).round}%" : 'off'})")
+      effective_throttle = @config.throttle.to_f
+      log(:info, "message bus initialized (default_throttle=#{effective_throttle > 0 ? "#{(effective_throttle * 100).round}%" : 'off'})")
     end
 
     # Register a named channel.
     #
-    # When +throttle+ is not provided, the bus-level default is used.
-    # Pass an explicit +throttle: 0.0+ to suppress the default for a
-    # specific channel, or a value like +0.5+ to set the backoff threshold.
+    # When a parameter is not provided (left as +:use_default+), the bus-level
+    # config value is used. Pass an explicit value to override for this channel.
     #
     # @param name [Symbol]
     # @param type [Class, nil] optional type constraint
-    # @param timeout [Numeric] delivery ACK deadline in seconds
-    # @param max_pending [Integer, nil] backpressure limit
+    # @param timeout [Numeric, Symbol] delivery ACK deadline in seconds
+    # @param max_pending [Integer, nil, Symbol] backpressure limit
     # @param throttle [Float, Symbol] capacity ratio where backoff begins (0.0 = disabled)
     # @return [Channel]
-    def add_channel(name, type: nil, timeout: 30, max_pending: nil, throttle: :use_default)
-      effective_throttle = resolve_throttle(throttle)
-      log(:info, "adding channel :#{name} (type=#{type || 'any'}, timeout=#{timeout}s, max_pending=#{max_pending || 'unbounded'})")
-      channel = Channel.new(name, type: type, timeout: timeout, max_pending: max_pending, stats: @stats, throttle: effective_throttle)
+    def add_channel(name, type: nil, timeout: :use_default, max_pending: :use_default, throttle: :use_default)
+      resolved = @config.resolve(timeout: timeout, max_pending: max_pending, throttle: throttle)
+      effective_timeout     = resolved[:timeout]
+      effective_max_pending = resolved[:max_pending]
+      effective_throttle    = resolved[:throttle]
+
+      log(:info, "adding channel :#{name} (type=#{type || 'any'}, timeout=#{effective_timeout}s, max_pending=#{effective_max_pending || 'unbounded'})")
+      channel = Channel.new(name, type: type, timeout: effective_timeout, max_pending: effective_max_pending, stats: @stats, throttle: effective_throttle)
       @channels[name] = channel
       channel
     end
@@ -137,10 +149,6 @@ module TypedBus
     end
 
     private
-
-    def resolve_throttle(value)
-      value == :use_default ? @default_throttle : value
-    end
 
     def fetch_channel!(name)
       channel = @channels[name]
