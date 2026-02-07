@@ -1,8 +1,27 @@
 # TypedBus
+<em>Async pub/sub with typed channels and ACK-based delivery</em>
 
-Async pub/sub message bus with typed channels, ACK-based delivery, and dead letter queues.
+<table>
+<tr>
+<td width="50%" align="center" valign="top">
+<img src="docs/assets/images/typed_bus.gif" alt="TypedBus" width="875"><br>
+<a href="https://madbomber.github.io/typed_bus">Comprehensive Documentation</a>
+</td>
+<td width="50%" valign="top">
+TypedBus provides named, optionally typed pub/sub channels with explicit ACK/NACK delivery, dead letter queues, backpressure, and adaptive throttling — all within a single Async reactor.<br><br>
+<strong>Key Features</strong><br>
 
-Built on the [async](https://github.com/socketry/async) gem with fiber-only concurrency. No mutexes, no threads.
+- <strong>Typed Channels</strong> - Restrict messages to a specific class<br>
+- <strong>ACK-Based Delivery</strong> - Subscribers must explicitly ack or nack<br>
+- <strong>Dead Letter Queues</strong> - Collect nacked and timed-out deliveries<br>
+- <strong>Backpressure</strong> - Bound pending deliveries per channel<br>
+- <strong>Adaptive Throttling</strong> - Progressive slowdown as capacity fills<br>
+- <strong>Configuration Cascade</strong> - Global → Bus → Channel defaults<br>
+- <strong>Stats Tracking</strong> - Per-channel publish/deliver/nack/timeout counters<br>
+- <strong>Structured Logging</strong> - Optional Logger integration across all components
+</td>
+</tr>
+</table>
 
 ## Installation
 

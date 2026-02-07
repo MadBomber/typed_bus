@@ -1,19 +1,27 @@
 # TypedBus
+<em>Async pub/sub with typed channels and ACK-based delivery</em>
 
-Async pub/sub message bus with typed channels, ACK-based delivery, and dead letter queues for Ruby.
+<table>
+<tr>
+<td width="50%" align="center" valign="top">
+<img src="assets/images/typed_bus.gif" alt="TypedBus" width="875"><br>
+<a href="https://github.com/madbomber/typed_bus">GitHub Repository</a>
+</td>
+<td width="50%" valign="top">
+TypedBus provides named, optionally typed pub/sub channels with explicit ACK/NACK delivery, dead letter queues, backpressure, and adaptive throttling — all within a single Async reactor.<br><br>
+<strong>Key Features</strong><br>
 
-Built on the [async](https://github.com/socketry/async) gem with fiber-only concurrency. No mutexes, no threads. All state lives within a single Async reactor.
-
-## Features
-
-- **Typed channels** — constrain messages to a specific class; mismatches raise at the publish site
-- **Explicit acknowledgment** — subscribers must `ack!` or `nack!` each delivery
-- **Dead letter queues** — failed and timed-out deliveries collect for inspection or retry
-- **Backpressure** — bounded channels block publishers when capacity is reached
-- **Adaptive throttling** — asymptotic backoff slows publishers as channels fill
-- **Three-tier configuration** — global, bus, and channel-level defaults with cascading inheritance
-- **Per-channel stats** — published, delivered, nacked, timed_out, dead_lettered, throttled
-- **Structured logging** — optional Ruby Logger integration across all components
+- <strong>Typed Channels</strong> - Restrict messages to a specific class<br>
+- <strong>ACK-Based Delivery</strong> - Subscribers must explicitly ack or nack<br>
+- <strong>Dead Letter Queues</strong> - Collect nacked and timed-out deliveries<br>
+- <strong>Backpressure</strong> - Bound pending deliveries per channel<br>
+- <strong>Adaptive Throttling</strong> - Progressive slowdown as capacity fills<br>
+- <strong>Configuration Cascade</strong> - Global → Bus → Channel defaults<br>
+- <strong>Stats Tracking</strong> - Per-channel publish/deliver/nack/timeout counters<br>
+- <strong>Structured Logging</strong> - Optional Logger integration across all components
+</td>
+</tr>
+</table>
 
 ## Quick Example
 
