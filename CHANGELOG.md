@@ -9,6 +9,11 @@
 - Declare `logger` as a runtime dependency in the gemspec so
   `require "typed_bus"` loads under Bundler on Ruby 4.0+, where `logger`
   is a bundled gem rather than a default gem. Found and fixed by BomberBot.
+- A throttled, bounded channel no longer hangs forever when published to at
+  full capacity. Previously the adaptive backoff computed an infinite delay
+  (`1 / 0`) and slept indefinitely; the throttle now yields at full capacity
+  and lets backpressure block the publisher instead. Found and fixed by
+  BomberBot.
 
 ### Changed
 
