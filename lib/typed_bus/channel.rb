@@ -199,6 +199,9 @@ module TypedBus
     def apply_throttle!
       remaining_ratio = (@max_pending - @pending_deliveries.size).to_f / @max_pending
       return if remaining_ratio > @throttle
+      # At or over capacity the delay would be infinite; let backpressure
+      # (wait_for_capacity) do the blocking instead of sleeping forever.
+      return if remaining_ratio <= 0.0
 
       effective_rate = @max_pending * remaining_ratio
       delay = 1.0 / effective_rate

@@ -208,6 +208,43 @@ class ChannelThrottleTest < Minitest::Test
     assert_match(/between 0\.0 and 1\.0/, error.message)
   end
 
+  # --- Full capacity must not block forever ---
+
+  def test_throttle_at_full_capacity_yields_to_backpressure
+    channel = TypedBus::Channel.new(:test,
+      max_pending: 1,
+      timeout: 0.2,
+      throttle: 0.5
+    )
+    deliveries = []
+    channel.subscribe { |d| deliveries << d }
+
+    completed = false
+    Async do |task|
+      task.with_timeout(2) do
+        # Fill to full capacity: pending == max_pending.
+        channel.publish("first")
+
+        # A second publish at full capacity must block on backpressure,
+        # not sleep forever inside the throttle.
+        publisher = task.async do
+          channel.publish("second")
+          completed = true
+        end
+
+        sleep(0.05) # let the publisher reach the throttle/backpressure point
+        deliveries.shift.ack! # drain capacity so backpressure can release the publisher
+
+        publisher.wait
+      end
+    rescue Async::TimeoutError
+      # completed stays false — the publisher hung at full capacity
+    end
+
+    assert completed,
+      "publisher at full capacity should proceed after an ack, not sleep forever"
+  end
+
   # --- Integer coercion ---
 
   def test_throttle_integer_coerced_to_float
