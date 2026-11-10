@@ -9,3 +9,11 @@
 
 # rspec failure tracking
 .rspec_status
+
+# generated docs site
+/site/
+
+# local tool state
+/.serena/
+/.playwright-mcp/
+/.aigcm_msg
