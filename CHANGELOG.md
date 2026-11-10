@@ -6,6 +6,9 @@
   partway through. Entries are now removed only after they are successfully
   yielded, so a raising block leaves the remaining entries in the queue for
   a later retry (#6). Found and fixed by BomberBot.
+- Declare `logger` as a runtime dependency in the gemspec so
+  `require "typed_bus"` loads under Bundler on Ruby 4.0+, where `logger`
+  is a bundled gem rather than a default gem. Found and fixed by BomberBot.
 
 ### Changed
 

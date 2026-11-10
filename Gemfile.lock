@@ -3,6 +3,7 @@ PATH
   specs:
     typed_bus (0.0.1)
       async (~> 2.0)
+      logger
 
 GEM
   remote: https://rubygems.org/
