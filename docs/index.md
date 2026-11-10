@@ -4,7 +4,7 @@
 <table>
 <tr>
 <td width="50%" align="center" valign="top">
-<img src="assets/images/typed_bus.gif" alt="TypedBus" width="875"><br>
+<img src="assets/images/typed_bus.png" alt="TypedBus" width="875"><br>
 <a href="https://github.com/madbomber/typed_bus">GitHub Repository</a>
 </td>
 <td width="50%" valign="top">
