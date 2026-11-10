@@ -1,5 +1,12 @@
 ## [Unreleased]
 
+### Fixed
+
+- `DeadLetterQueue#drain` no longer loses entries when the block raises
+  partway through. Entries are now removed only after they are successfully
+  yielded, so a raising block leaves the remaining entries in the queue for
+  a later retry (#6). Found and fixed by BomberBot.
+
 ### Changed
 
 - Renamed gem from `async_typed_bus` to `typed_bus` (module `TypedBus`).
