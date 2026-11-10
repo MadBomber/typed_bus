@@ -49,6 +49,25 @@ class DeadLetterQueueTest < Minitest::Test
     assert dlq.empty?
   end
 
+  def test_drain_block_raise_keeps_unprocessed_entries
+    dlq = TypedBus::DeadLetterQueue.new
+    %w[a b c d e].each { |m| dlq.push(make_delivery(m)) }
+
+    processed = []
+    assert_raises(RuntimeError) do
+      dlq.drain do |d|
+        raise "boom" if d.message == "c"
+
+        processed << d.message
+      end
+    end
+
+    # "c" raised, so "c", "d", "e" remain in the queue for a retry.
+    assert_equal %w[a b], processed
+    assert_equal %w[c d e], dlq.map(&:message)
+    assert_equal 3, dlq.size
+  end
+
   def test_clear_empties_queue
     dlq = TypedBus::DeadLetterQueue.new
     dlq.push(make_delivery)
