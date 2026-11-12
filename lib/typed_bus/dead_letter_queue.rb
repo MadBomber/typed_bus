@@ -37,10 +37,12 @@ module TypedBus
 
     # Remove the current entries from the queue and yield each one once.
     #
-    # Entries added while the block runs (such as a retry that fails
-    # again) stay queued for the next drain. If the block raises, the
-    # entry it was handling and the ones not yet yielded go back to the
-    # front of the queue in their original order.
+    # The queue is emptied before the first yield, so while the block
+    # runs, #size and #each see only entries added during the drain.
+    # Those (such as a retry that fails again) stay queued for the next
+    # drain. If the block raises, the entry it was handling and the ones
+    # not yet yielded go back to the front of the queue in their
+    # original order.
     # @return [Array<Delivery>] the drained entries
     def drain
       drained, @entries = @entries, []
