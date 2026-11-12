@@ -1709,15 +1709,21 @@
 <td><code>14_adaptive_throttling.rb</code></td>
 <td>Adaptive rate limiting with <code>throttle: Float</code>. Asymptotic backoff as a bounded channel fills, bus-level throttle defaults with per-channel overrides.</td>
 </tr>
+<tr>
+<td>15</td>
+<td><code>15_performance.rb</code></td>
+<td>Live terminal dashboard (throughput, RSS, GC) over several independent buses with immediate acks. Needs the optional <code>ratatui_ruby</code> gem: <code>bundle config set --local with extras &amp;&amp; bundle install</code>, then <code>bundle exec ruby examples/15_performance.rb</code>. Writes <code>perf_metrics.csv</code>.</td>
+</tr>
 </tbody>
 </table>
 <h2 id="running-all-examples">Running All Examples<a class="headerlink" href="#running-all-examples" title="Permanent link">&para;</a></h2>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="k">for</span><span class="w"> </span>f<span class="w"> </span><span class="k">in</span><span class="w"> </span>examples/*.rb<span class="p">;</span><span class="w"> </span><span class="k">do</span>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="k">for</span><span class="w"> </span>f<span class="w"> </span><span class="k">in</span><span class="w"> </span>examples/0*.rb<span class="w"> </span>examples/1<span class="o">[</span><span class="m">0</span>-4<span class="o">]</span>*.rb<span class="p">;</span><span class="w"> </span><span class="k">do</span>
 </span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="w">  </span><span class="nb">echo</span><span class="w"> </span><span class="s2">"=== </span><span class="nv">$f</span><span class="s2"> ==="</span>
 </span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="w">  </span>bundle<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>ruby<span class="w"> </span><span class="s2">"</span><span class="nv">$f</span><span class="s2">"</span>
 </span><span id="__span-1-4"><a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="w">  </span><span class="nb">echo</span>
 </span><span id="__span-1-5"><a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="k">done</span>
 </span></code></pre></div>
+<p>The loop skips <code>15_performance.rb</code>: it is an interactive terminal dashboard that runs until you press <code>q</code>, and it needs the optional <code>ratatui_ruby</code> gem. Run it by hand as shown in its row above.</p>
 
 
 

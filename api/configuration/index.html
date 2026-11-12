@@ -1383,10 +1383,32 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#timeout-max_pending-throttle" class="md-nav__link">
+  <a href="#timeoutseconds" class="md-nav__link">
     <span class="md-ellipsis">
       
-        timeout=, max_pending=, throttle=
+        timeout=(seconds)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#max_pendinglimit" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        max_pending=(limit)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#throttleratio" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        throttle=(ratio)
       
     </span>
   </a>
@@ -1801,10 +1823,32 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#timeout-max_pending-throttle" class="md-nav__link">
+  <a href="#timeoutseconds" class="md-nav__link">
     <span class="md-ellipsis">
       
-        timeout=, max_pending=, throttle=
+        timeout=(seconds)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#max_pendinglimit" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        max_pending=(limit)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#throttleratio" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        throttle=(ratio)
       
     </span>
   </a>
@@ -1945,7 +1989,7 @@
 <td><code>timeout</code></td>
 <td><code>Numeric</code></td>
 <td><code>30</code></td>
-<td>Delivery ACK deadline in seconds</td>
+<td>Delivery ACK deadline in seconds; <code>nil</code> = never auto-nack</td>
 </tr>
 <tr>
 <td><code>max_pending</code></td>
@@ -1977,17 +2021,30 @@
 <h3 id="configurationnew"><code>Configuration.new</code><a class="headerlink" href="#configurationnew" title="Permanent link">&para;</a></h3>
 <p>Creates a new Configuration with factory defaults.</p>
 <h2 id="methods">Methods<a class="headerlink" href="#methods" title="Permanent link">&para;</a></h2>
-<h3 id="timeout-max_pending-throttle"><code>timeout=</code>, <code>max_pending=</code>, <code>throttle=</code><a class="headerlink" href="#timeout-max_pending-throttle" title="Permanent link">&para;</a></h3>
-<p>Standard setters for cascade parameters.</p>
+<h3 id="timeoutseconds"><code>timeout=(seconds)</code><a class="headerlink" href="#timeoutseconds" title="Permanent link">&para;</a></h3>
+<p>Sets the delivery ACK deadline. <code>nil</code> means deliveries never auto-nack.</p>
+<h3 id="max_pendinglimit"><code>max_pending=(limit)</code><a class="headerlink" href="#max_pendinglimit" title="Permanent link">&para;</a></h3>
+<p>Sets the backpressure limit: <code>nil</code> (unbounded) or a positive <code>Integer</code>.</p>
+<p><strong>Raises:</strong> <code>ArgumentError</code> for anything else, such as <code>0</code>, <code>-1</code>, or <code>2.5</code>.</p>
+<div class="language-ruby highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">config</span><span class="o">.</span><span class="n">max_pending</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span>
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="c1"># =&gt; ArgumentError: max_pending must be nil or a positive Integer, got 0</span>
+</span></code></pre></div>
+<h3 id="throttleratio"><code>throttle=(ratio)</code><a class="headerlink" href="#throttleratio" title="Permanent link">&para;</a></h3>
+<p>Sets the throttle threshold: <code>nil</code> or <code>0</code> (off), or a number strictly between <code>0</code> and <code>1</code>.</p>
+<p><strong>Raises:</strong> <code>ArgumentError</code> for anything else, such as <code>1.5</code>, <code>-3</code>, or <code>"fast"</code>.</p>
+<div class="language-ruby highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="n">config</span><span class="o">.</span><span class="n">throttle</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">1</span><span class="o">.</span><span class="mi">5</span>
+</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="c1"># =&gt; ArgumentError: throttle must be 0 (off) or between 0.0 and 1.0 (exclusive), got 1.5</span>
+</span></code></pre></div>
+<p>A throttle also needs a <code>max_pending</code>. That is checked when a channel is created, because the two can be set in either order.</p>
 <h3 id="loggerlog"><code>logger=(log)</code><a class="headerlink" href="#loggerlog" title="Permanent link">&para;</a></h3>
 <p>Sets the logger and applies the current <code>log_level</code> to it.</p>
-<div class="language-ruby highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">config</span><span class="o">.</span><span class="n">logger</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="no">Logger</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="vg">$stdout</span><span class="p">)</span>
-</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="c1"># config.logger.level is now config.log_level</span>
+<div class="language-ruby highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="n">config</span><span class="o">.</span><span class="n">logger</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="no">Logger</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="vg">$stdout</span><span class="p">)</span>
+</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="c1"># config.logger.level is now config.log_level</span>
 </span></code></pre></div>
 <h3 id="log_levellevel"><code>log_level=(level)</code><a class="headerlink" href="#log_levellevel" title="Permanent link">&para;</a></h3>
 <p>Sets the log level and applies it to the current logger (if present).</p>
-<div class="language-ruby highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="n">config</span><span class="o">.</span><span class="n">log_level</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="no">Logger</span><span class="o">::</span><span class="no">DEBUG</span>
-</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="c1"># config.logger.level is now Logger::DEBUG (if logger is set)</span>
+<div class="language-ruby highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="n">config</span><span class="o">.</span><span class="n">log_level</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="no">Logger</span><span class="o">::</span><span class="no">DEBUG</span>
+</span><span id="__span-3-2"><a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="c1"># config.logger.level is now Logger::DEBUG (if logger is set)</span>
 </span></code></pre></div>
 <h3 id="resolvetimeout-max_pending-throttle"><code>resolve(timeout:, max_pending:, throttle:)</code><a class="headerlink" href="#resolvetimeout-max_pending-throttle" title="Permanent link">&para;</a></h3>
 <p>Merges overrides on top of this configuration's values. Parameters set to <code>:use_default</code> inherit from this config.</p>
@@ -2019,27 +2076,27 @@
 </tbody>
 </table>
 <p><strong>Returns:</strong> <code>Hash</code> with resolved <code>:timeout</code>, <code>:max_pending</code>, and <code>:throttle</code> values.</p>
-<div class="language-ruby highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="n">config</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="no">TypedBus</span><span class="o">::</span><span class="no">Configuration</span><span class="o">.</span><span class="n">new</span>
-</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="n">config</span><span class="o">.</span><span class="n">timeout</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">60</span>
-</span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>
-</span><span id="__span-2-4"><a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="n">config</span><span class="o">.</span><span class="n">resolve</span><span class="p">(</span><span class="ss">timeout</span><span class="p">:</span><span class="w"> </span><span class="mi">10</span><span class="p">)</span>
-</span><span id="__span-2-5"><a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="c1"># =&gt; { timeout: 10, max_pending: nil, throttle: 0.0 }</span>
-</span><span id="__span-2-6"><a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a>
-</span><span id="__span-2-7"><a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a><span class="n">config</span><span class="o">.</span><span class="n">resolve</span>
-</span><span id="__span-2-8"><a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a><span class="c1"># =&gt; { timeout: 60, max_pending: nil, throttle: 0.0 }</span>
+<div class="language-ruby highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="n">config</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="no">TypedBus</span><span class="o">::</span><span class="no">Configuration</span><span class="o">.</span><span class="n">new</span>
+</span><span id="__span-4-2"><a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="n">config</span><span class="o">.</span><span class="n">timeout</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">60</span>
+</span><span id="__span-4-3"><a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>
+</span><span id="__span-4-4"><a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a><span class="n">config</span><span class="o">.</span><span class="n">resolve</span><span class="p">(</span><span class="ss">timeout</span><span class="p">:</span><span class="w"> </span><span class="mi">10</span><span class="p">)</span>
+</span><span id="__span-4-5"><a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a><span class="c1"># =&gt; { timeout: 10, max_pending: nil, throttle: 0.0 }</span>
+</span><span id="__span-4-6"><a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a>
+</span><span id="__span-4-7"><a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a><span class="n">config</span><span class="o">.</span><span class="n">resolve</span>
+</span><span id="__span-4-8"><a id="__codelineno-4-8" name="__codelineno-4-8" href="#__codelineno-4-8"></a><span class="c1"># =&gt; { timeout: 60, max_pending: nil, throttle: 0.0 }</span>
 </span></code></pre></div>
 <h3 id="dup"><code>dup</code><a class="headerlink" href="#dup" title="Permanent link">&para;</a></h3>
 <p>Returns an independent shallow copy. The logger is intentionally shared (same Logger instance); all other fields are independent.</p>
 <h2 id="constants">Constants<a class="headerlink" href="#constants" title="Permanent link">&para;</a></h2>
 <h3 id="defaults"><code>DEFAULTS</code><a class="headerlink" href="#defaults" title="Permanent link">&para;</a></h3>
 <p>Frozen hash of factory defaults:</p>
-<div class="language-ruby highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="p">{</span>
-</span><span id="__span-3-2"><a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="w">  </span><span class="ss">timeout</span><span class="p">:</span><span class="w"> </span><span class="mi">30</span><span class="p">,</span>
-</span><span id="__span-3-3"><a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="w">  </span><span class="ss">max_pending</span><span class="p">:</span><span class="w"> </span><span class="kp">nil</span><span class="p">,</span>
-</span><span id="__span-3-4"><a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="w">  </span><span class="ss">throttle</span><span class="p">:</span><span class="w"> </span><span class="mi">0</span><span class="o">.</span><span class="mi">0</span><span class="p">,</span>
-</span><span id="__span-3-5"><a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a><span class="w">  </span><span class="ss">logger</span><span class="p">:</span><span class="w"> </span><span class="kp">nil</span><span class="p">,</span>
-</span><span id="__span-3-6"><a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a><span class="w">  </span><span class="ss">log_level</span><span class="p">:</span><span class="w"> </span><span class="no">Logger</span><span class="o">::</span><span class="no">INFO</span>
-</span><span id="__span-3-7"><a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a><span class="p">}</span>
+<div class="language-ruby highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="p">{</span>
+</span><span id="__span-5-2"><a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a><span class="w">  </span><span class="ss">timeout</span><span class="p">:</span><span class="w"> </span><span class="mi">30</span><span class="p">,</span>
+</span><span id="__span-5-3"><a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a><span class="w">  </span><span class="ss">max_pending</span><span class="p">:</span><span class="w"> </span><span class="kp">nil</span><span class="p">,</span>
+</span><span id="__span-5-4"><a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a><span class="w">  </span><span class="ss">throttle</span><span class="p">:</span><span class="w"> </span><span class="mi">0</span><span class="o">.</span><span class="mi">0</span><span class="p">,</span>
+</span><span id="__span-5-5"><a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a><span class="w">  </span><span class="ss">logger</span><span class="p">:</span><span class="w"> </span><span class="kp">nil</span><span class="p">,</span>
+</span><span id="__span-5-6"><a id="__codelineno-5-6" name="__codelineno-5-6" href="#__codelineno-5-6"></a><span class="w">  </span><span class="ss">log_level</span><span class="p">:</span><span class="w"> </span><span class="no">Logger</span><span class="o">::</span><span class="no">INFO</span>
+</span><span id="__span-5-7"><a id="__codelineno-5-7" name="__codelineno-5-7" href="#__codelineno-5-7"></a><span class="p">}</span>
 </span></code></pre></div>
 
 

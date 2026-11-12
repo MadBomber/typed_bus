@@ -1277,6 +1277,50 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#max_pending-validation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        max_pending Validation
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#type-validation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Type Validation
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#subscribing-without-a-block" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Subscribing Without a Block
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#raising-dead-letter-callbacks" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Raising Dead Letter Callbacks
+      
+    </span>
+  </a>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -1786,6 +1830,50 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#max_pending-validation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        max_pending Validation
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#type-validation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Type Validation
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#subscribing-without-a-block" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Subscribing Without a Block
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#raising-dead-letter-callbacks" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Raising Dead Letter Callbacks
+      
+    </span>
+  </a>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -1879,12 +1967,32 @@
 </span></code></pre></div>
 <h2 id="throttle-validation">Throttle Validation<a class="headerlink" href="#throttle-validation" title="Permanent link">&para;</a></h2>
 <ul>
-<li><code>throttle</code> without <code>max_pending</code> raises <code>ArgumentError</code></li>
-<li><code>throttle</code> outside <code>(0.0, 1.0)</code> raises <code>ArgumentError</code></li>
+<li><code>throttle</code> without <code>max_pending</code> raises <code>ArgumentError</code> when the channel is created</li>
+<li><code>throttle</code> that is not <code>nil</code>, <code>0</code>, or a number strictly between <code>0</code> and <code>1</code> raises <code>ArgumentError</code> as soon as it is set: in <code>Configuration#throttle=</code>, <code>MessageBus.new</code>, <code>add_channel</code>, or <code>Channel.new</code></li>
 </ul>
 <div class="language-ruby highlight"><pre><span></span><code><span id="__span-7-1"><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="no">TypedBus</span><span class="o">::</span><span class="no">Channel</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="ss">:bad</span><span class="p">,</span><span class="w"> </span><span class="ss">throttle</span><span class="p">:</span><span class="w"> </span><span class="mi">0</span><span class="o">.</span><span class="mi">5</span><span class="p">,</span><span class="w"> </span><span class="ss">timeout</span><span class="p">:</span><span class="w"> </span><span class="mi">5</span><span class="p">)</span>
 </span><span id="__span-7-2"><a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a><span class="c1"># =&gt; ArgumentError: throttle requires max_pending on channel :bad</span>
+</span><span id="__span-7-3"><a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a>
+</span><span id="__span-7-4"><a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a><span class="no">TypedBus</span><span class="o">::</span><span class="no">MessageBus</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="ss">throttle</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="o">.</span><span class="mi">5</span><span class="p">,</span><span class="w"> </span><span class="ss">max_pending</span><span class="p">:</span><span class="w"> </span><span class="mi">10</span><span class="p">)</span>
+</span><span id="__span-7-5"><a id="__codelineno-7-5" name="__codelineno-7-5" href="#__codelineno-7-5"></a><span class="c1"># =&gt; ArgumentError: throttle must be 0 (off) or between 0.0 and 1.0 (exclusive), got 1.5</span>
 </span></code></pre></div>
+<h2 id="max_pending-validation">max_pending Validation<a class="headerlink" href="#max_pending-validation" title="Permanent link">&para;</a></h2>
+<p><code>max_pending</code> must be <code>nil</code> (unbounded) or a positive <code>Integer</code>. <code>Configuration#max_pending=</code>, <code>MessageBus.new</code>, <code>add_channel</code>, and <code>Channel.new</code> raise <code>ArgumentError</code> for anything else:</p>
+<div class="language-ruby highlight"><pre><span></span><code><span id="__span-8-1"><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="no">TypedBus</span><span class="o">::</span><span class="no">Channel</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="ss">:bad</span><span class="p">,</span><span class="w"> </span><span class="ss">max_pending</span><span class="p">:</span><span class="w"> </span><span class="mi">0</span><span class="p">)</span>
+</span><span id="__span-8-2"><a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a><span class="c1"># =&gt; ArgumentError: max_pending must be nil or a positive Integer, got 0</span>
+</span></code></pre></div>
+<h2 id="type-validation">Type Validation<a class="headerlink" href="#type-validation" title="Permanent link">&para;</a></h2>
+<p>A channel's <code>type:</code> must be a <code>Class</code> or <code>Module</code> (or <code>nil</code> for untyped). Anything else raises <code>ArgumentError</code> when the channel is created:</p>
+<div class="language-ruby highlight"><pre><span></span><code><span id="__span-9-1"><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a><span class="no">TypedBus</span><span class="o">::</span><span class="no">Channel</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="ss">:bad</span><span class="p">,</span><span class="w"> </span><span class="ss">type</span><span class="p">:</span><span class="w"> </span><span class="s2">"Order"</span><span class="p">)</span>
+</span><span id="__span-9-2"><a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a><span class="c1"># =&gt; ArgumentError: type must be a Class or Module, got "Order" on channel :bad</span>
+</span></code></pre></div>
+<h2 id="subscribing-without-a-block">Subscribing Without a Block<a class="headerlink" href="#subscribing-without-a-block" title="Permanent link">&para;</a></h2>
+<p><code>subscribe</code> needs a block to deliver to. Calling it without one raises <code>ArgumentError</code>:</p>
+<div class="language-ruby highlight"><pre><span></span><code><span id="__span-10-1"><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span class="n">bus</span><span class="o">.</span><span class="n">subscribe</span><span class="p">(</span><span class="ss">:orders</span><span class="p">)</span>
+</span><span id="__span-10-2"><a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a><span class="c1"># =&gt; ArgumentError: Channel :orders subscribe requires a block</span>
+</span></code></pre></div>
+<h2 id="raising-dead-letter-callbacks">Raising Dead Letter Callbacks<a class="headerlink" href="#raising-dead-letter-callbacks" title="Permanent link">&para;</a></h2>
+<p>An <code>on_dead_letter</code> callback runs inside the nack that dead-lettered the delivery. If it raises, the entry is already in the DLQ and the <code>nacked</code>/<code>timed_out</code> and <code>dead_lettered</code> stats are already counted, but the error propagates to whoever triggered the nack: the subscriber (where it is logged as a subscriber error), the timeout task, or the publisher when there are no subscribers. Rescue inside the callback if it can fail.</p>
 
 
 
