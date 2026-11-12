@@ -22,7 +22,7 @@ Gem::Specification.new do |spec|
   spec.metadata["source_code_uri"] = spec.homepage
   spec.metadata["changelog_uri"] = "#{spec.homepage}/blob/main/CHANGELOG.md"
 
-  spec.files = Dir.glob(%w[lib/**/*.rb README.md CHANGELOG.md LICENSE*], base: __dir__)
+  spec.files = IO.popen(%w[git ls-files -z -- lib/*.rb README.md CHANGELOG.md LICENSE*], chdir: __dir__, err: IO::NULL, &:read).split("\x0")
   spec.require_paths = ["lib"]
 
   spec.add_dependency "async", "~> 2.0"
