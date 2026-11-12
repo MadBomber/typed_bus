@@ -25,3 +25,4 @@ ruby -Ilib examples/01_basic_usage.rb
 | 12 | `12_logging_failures.rb` | Failure-path logging: explicit nacks, delivery timeouts, no-subscriber dead-lettering, and DLQ drain. Colorized output highlights warnings and errors. |
 | 13 | `13_logging_backpressure.rb` | Backpressure logging. Shows DEBUG-level messages as the publisher fiber blocks and resumes while a slow subscriber drains a bounded channel. |
 | 14 | `14_adaptive_throttling.rb` | Adaptive rate limiting with `throttle: Float`. Demonstrates asymptotic backoff as a bounded channel fills, plus bus-level throttle defaults with per-channel overrides. |
+| 15 | `15_performance.rb` | Live terminal dashboard (throughput, RSS, GC) over several independent buses with immediate acks. Needs the optional `ratatui_ruby` gem: `bundle config set --local with extras && bundle install`, then `bundle exec ruby examples/15_performance.rb`. Writes `perf_metrics.csv`. |

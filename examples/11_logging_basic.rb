@@ -13,13 +13,17 @@ require_relative "../lib/typed_bus"
 
 # Configure a colorized logger writing to STDOUT
 logger = Logger.new($stdout)
-logger.level = Logger::DEBUG
 logger.formatter = proc do |severity, datetime, _progname, msg|
   timestamp = datetime.strftime("%H:%M:%S.%L")
   "#{timestamp} [#{severity.ljust(5)}] #{msg}\n"
 end
 
-TypedBus.logger = logger
+# Assigning a logger applies the configured log_level (INFO by default),
+# so set DEBUG through the configuration rather than on the logger itself.
+TypedBus.configure do |config|
+  config.logger    = logger
+  config.log_level = Logger::DEBUG
+end
 
 # --- Set up a bus with two channels ---
 

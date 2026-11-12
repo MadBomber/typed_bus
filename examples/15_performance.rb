@@ -15,12 +15,12 @@
 #
 # Press q or Ctrl-C to stop.
 #
-# Usage:
+# Usage (ratatui_ruby lives in the optional :extras bundle group):
+#   bundle config set --local with extras && bundle install
 #   bundle exec ruby examples/15_performance.rb
 
 require_relative "../lib/typed_bus"
 require "ratatui_ruby"
-require "csv"
 
 # ---------------------------------------------------------------------------
 # Bus configurations
@@ -197,7 +197,6 @@ class PerfDashboard
     @stop_flag     = -> { @stopping }
     @stopping      = false
     @start_time    = Process.clock_gettime(Process::CLOCK_MONOTONIC)
-    @tick          = 0
     @last_sample   = @start_time
     @last_csv      = @start_time
     @total_history = []
@@ -233,7 +232,6 @@ class PerfDashboard
     return if dt < 0.25
 
     @last_sample = now
-    @tick += 1
     total_rate = 0
 
     @buses.each do |s|
@@ -393,7 +391,6 @@ class PerfDashboard
   def render_rss_sparkline(frame, area)
     data = @mem.rss_history.empty? ? [0] : @mem.rss_history
     delta_sign = @mem.delta_mb >= 0 ? "+" : ""
-    delta_color = @mem.delta_mb.abs > 5.0 ? :red : :green
     delta_str = "#{delta_sign}#{@mem.delta_mb}"
 
     frame.render_widget(
