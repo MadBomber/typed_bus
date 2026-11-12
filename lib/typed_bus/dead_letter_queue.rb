@@ -42,19 +42,24 @@ module TypedBus
     # Those (such as a retry that fails again) stay queued for the next
     # drain. If the block raises, the entry it was handling and the ones
     # not yet yielded go back to the front of the queue in their
-    # original order.
+    # original order. If the block exits early with +break+, +return+,
+    # or +throw+, the entry it was handling counts as done and only the
+    # ones not yet yielded go back.
     # @return [Array<Delivery>] the drained entries
     def drain
       drained, @entries = @entries, []
       if block_given?
-        yielded = 0
+        handled = 0
         begin
           drained.each do |entry|
+            handled += 1
             yield entry
-            yielded += 1
           end
+        rescue Exception # rubocop:disable Lint/RescueException -- any raise puts the entry back
+          handled -= 1
+          raise
         ensure
-          @entries.unshift(*drained.drop(yielded))
+          @entries.unshift(*drained.drop(handled))
         end
       end
       log(:info, "drained #{drained.size} entries")
