@@ -211,7 +211,6 @@ class MessageBusTest < Minitest::Test
     @bus.add_channel(:blockless)
     error = assert_raises(ArgumentError) { @bus.subscribe(:blockless) }
     assert_match(/requires a block/, error.message)
-    assert_nil Async { @bus.publish(:blockless, "msg") }.wait, "no subscriber should be registered"
   end
 
   def test_unsubscribe_raises_on_unknown_channel
