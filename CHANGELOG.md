@@ -7,10 +7,13 @@
   registered with a nil handler, so every published message waited on an
   acknowledgment that could never arrive, and a bounded channel blocked
   publishers forever (#16). Found and fixed by BomberBot.
-- `DeadLetterQueue#drain` no longer loses entries when the block raises
-  partway through. Entries are now removed only after they are successfully
-  yielded, so a raising block leaves the remaining entries in the queue for
-  a later retry (#6). Found and fixed by BomberBot.
+- `DeadLetterQueue#drain` with a block no longer loses entries when the
+  block raises, and no longer loops when the block re-queues entries. It
+  empties the queue first and yields that snapshot once; entries added
+  during the drain (such as a retry that fails again) wait for the next
+  drain. If the block raises, the entry it was handling and the ones not
+  yet yielded go back to the front of the queue (#6). Found and fixed by
+  BomberBot.
 - Declare `logger` as a runtime dependency in the gemspec so
   `require "typed_bus"` loads under Bundler on Ruby 4.0+, where `logger`
   is a bundled gem rather than a default gem. Found and fixed by BomberBot.
@@ -20,10 +23,10 @@
   and lets backpressure block the publisher instead. Found and fixed by
   BomberBot.
 - The packaged gem now contains only the git-tracked `lib/**/*.rb` files,
-  `README.md`, and `CHANGELOG.md` (plus a `LICENSE*` file once one is
-  added). It previously shipped the docs site (including a 16.6 MB GIF and
-  a 2.7 MB MP4), examples, CI workflows, and local dotfiles, making the
-  `.gem` about 19.9 MB instead of 15 KB (#3). Found and fixed by BomberBot.
+  `README.md`, `CHANGELOG.md`, and `LICENSE`. It previously shipped the
+  docs site (including a 16.6 MB GIF and a 2.7 MB MP4), examples, CI
+  workflows, and local dotfiles, making the `.gem` about 19.9 MB instead
+  of 15 KB (#3). Found and fixed by BomberBot.
 - Unsubscribing a subscriber while a publish is fanning out no longer leaves
   that message's delivery tracker pending forever (and, on a bounded channel,
   holding a `max_pending` slot). `Channel#publish` now snapshots subscriber
@@ -42,7 +45,6 @@
   the default bundle no longer builds a Rust native extension.
 - Refreshed `Gemfile.lock` to async 2.46.0 (#14).
 - Removed the no-op `Configuration#initialize_copy` override (#21).
-- Renamed gem from `async_typed_bus` to `typed_bus` (module `TypedBus`).
 
 ### Added
 
@@ -50,6 +52,17 @@
   `rubygems_mfa_required` gemspec metadata (#12).
 - CI workflow running the test suite on Ruby 3.2-4.0 plus a load smoke test
   outside the dev bundle (#20); Dependabot configuration (#15).
+
+## [0.0.1] - 2026-02-07
+
+- Initial release
+
+### Changed
+
+- Renamed gem from `async_typed_bus` to `typed_bus` (module `TypedBus`).
+
+### Added
+
 - Adaptive rate limiting via `throttle: Float` on Channel and MessageBus.
   The value (0.0 to 1.0) sets the remaining-capacity ratio where asymptotic
   backoff begins. Below that threshold, each publish sleeps for
@@ -57,7 +70,3 @@
 - `MessageBus.new(throttle: 0.5)` sets a bus-wide default applied to every
   `add_channel` call. Per-channel override or `throttle: 0.0` to disable.
 - `:throttled` stat counter recorded each time a publish is rate-limited.
-
-## [0.1.0] - 2026-02-06
-
-- Initial release
