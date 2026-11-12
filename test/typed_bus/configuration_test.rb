@@ -144,4 +144,27 @@ class ConfigurationTest < Minitest::Test
   def test_defaults_frozen
     assert TypedBus::Configuration::DEFAULTS.frozen?
   end
+
+  # --- max_pending validation ---
+
+  def test_max_pending_accepts_positive_integer_and_nil
+    @config.max_pending = 5
+    assert_equal 5, @config.max_pending
+
+    @config.max_pending = nil
+    assert_nil @config.max_pending
+  end
+
+  def test_max_pending_rejects_zero_negative_and_non_integer
+    [0, -1, 2.5, "10"].each do |bad|
+      error = assert_raises(ArgumentError) { @config.max_pending = bad }
+      assert_match(/max_pending must be nil or a positive Integer/, error.message)
+    end
+    assert_nil @config.max_pending
+  end
+
+  def test_validate_max_pending_returns_valid_value
+    assert_equal 3, TypedBus::Configuration.validate_max_pending!(3)
+    assert_nil TypedBus::Configuration.validate_max_pending!(nil)
+  end
 end

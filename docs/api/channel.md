@@ -13,7 +13,7 @@ A named, typed pub/sub channel with explicit acknowledgment tracking.
 | `name` | required | `Symbol` channel name |
 | `type` | `nil` | Optional class constraint for messages |
 | `timeout` | `30` | Seconds before delivery auto-nacks |
-| `max_pending` | `nil` | Backpressure limit; `nil` = unbounded |
+| `max_pending` | `nil` | Backpressure limit (positive `Integer`); `nil` = unbounded |
 | `stats` | `nil` | Optional `Stats` instance for counters |
 | `throttle` | `0.0` | Capacity ratio where backoff begins |
 

@@ -74,9 +74,14 @@ class ChannelTest < Minitest::Test
   def test_subscriber_error_does_not_crash_publish
     channel = make_channel
     channel.subscribe { raise "boom" }
+    tracker = nil
 
-    Async { channel.publish("ok") }
-    # should not raise — error is warned and delivery is nacked
+    Async { tracker = channel.publish("ok") }
+
+    assert_instance_of TypedBus::DeliveryTracker, tracker
+    assert tracker.fully_resolved?
+    refute tracker.fully_delivered?
+    assert_equal 0, channel.pending_count
   end
 
   def test_subscriber_error_nacks_delivery
@@ -382,10 +387,24 @@ class ChannelTest < Minitest::Test
 
   def test_channel_without_stats_does_not_raise
     channel = TypedBus::Channel.new(:nostats, timeout: 0.1)
-    channel.subscribe { |d| d.ack! }
+    received = []
+    channel.subscribe { |d| received << d.message; d.ack! }
+    tracker = nil
+
+    Async { tracker = channel.publish("msg") }
+
+    assert_equal ["msg"], received
+    assert tracker.fully_delivered?
+    assert_equal 0, channel.pending_count
+  end
+
+  def test_channel_without_stats_dead_letters_without_raising
+    channel = TypedBus::Channel.new(:nostats, timeout: 0.1)
+    channel.subscribe { |d| d.nack! }
 
     Async { channel.publish("msg") }
-    # no error even without stats
+
+    assert_equal 1, channel.dead_letter_queue.size
   end
 
   def test_stats_recording_published_counter
@@ -509,5 +528,75 @@ class ChannelTest < Minitest::Test
     assert_match(/published message/, log_output.string)
   ensure
     TypedBus.logger = original
+  end
+
+  # --- Unsubscribe during publish ---
+
+  def test_unsubscribe_during_publish_still_resolves_tracker
+    channel = make_channel(timeout: 0.2)
+    received = []
+    id_b = nil
+    tracker = nil
+
+    Async do |task|
+      channel.subscribe { |d| task.async { sleep 0.05; d.ack! } }
+      channel.subscribe { |d| channel.unsubscribe(id_b); d.ack! }
+      id_b = channel.subscribe { |d| received << d.message; d.ack! }
+
+      tracker = channel.publish(:hello)
+      sleep 0.4 # well past the delivery timeout
+    end
+
+    assert_equal [:hello], received, "snapshotted subscriber still gets this message"
+    assert tracker.fully_resolved?
+    assert_equal 0, channel.pending_count
+    assert_equal 2, channel.subscriber_count
+  end
+
+  def test_unsubscribe_during_publish_does_not_leak_backpressure_slots
+    channel = make_channel(max_pending: 1, timeout: 0.2)
+    published = 0
+
+    Async do |task|
+      task.with_timeout(2) do
+        3.times do
+          id = nil
+          channel.subscribe { |d| channel.unsubscribe(id); d.ack! }
+          id = channel.subscribe { |d| d.ack! }
+          channel.publish(:msg)
+          published += 1
+        end
+      end
+    rescue Async::TimeoutError
+      # published stays short — a leaked slot blocked the publisher
+    end
+
+    assert_equal 3, published
+    assert_equal 0, channel.pending_count
+  end
+
+  # --- max_pending validation ---
+
+  def test_max_pending_zero_raises
+    error = assert_raises(ArgumentError) { make_channel(max_pending: 0) }
+    assert_match(/max_pending must be nil or a positive Integer/, error.message)
+  end
+
+  def test_max_pending_negative_raises
+    assert_raises(ArgumentError) { make_channel(max_pending: -1) }
+  end
+
+  def test_max_pending_non_integer_raises
+    assert_raises(ArgumentError) { make_channel(max_pending: 2.5) }
+    assert_raises(ArgumentError) { make_channel(max_pending: "10") }
+  end
+
+  def test_max_pending_zero_with_throttle_raises_argument_error
+    assert_raises(ArgumentError) { make_channel(max_pending: 0, throttle: 0.5) }
+  end
+
+  def test_max_pending_positive_integer_and_nil_accepted
+    assert_instance_of TypedBus::Channel, make_channel(max_pending: 1)
+    assert_instance_of TypedBus::Channel, make_channel(max_pending: nil)
   end
 end

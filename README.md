@@ -69,7 +69,7 @@ channel = TypedBus::Channel.new(:orders, timeout: 10)
 |--------|------|---------|-------------|
 | `type` | `Class` | `nil` | Restricts published messages to a specific class |
 | `timeout` | `Numeric` | `30` | Seconds before unresolved deliveries auto-nack |
-| `max_pending` | `Integer` | `nil` | Backpressure limit; `nil` = unbounded |
+| `max_pending` | `Integer` | `nil` | Backpressure limit (positive `Integer`); `nil` = unbounded |
 | `throttle` | `Float` | `0.0` | Remaining-capacity ratio where backoff begins; `0.0` = disabled |
 
 ### Typed Channels
@@ -221,7 +221,7 @@ TypedBus resolves parameters through a three-tier cascade: **Global → Bus → 
 | Parameter | Default | Description |
 |-----------|---------|-------------|
 | `timeout` | `30` | Delivery ACK deadline in seconds |
-| `max_pending` | `nil` | Backpressure limit; `nil` = unbounded |
+| `max_pending` | `nil` | Backpressure limit (positive `Integer`); `nil` = unbounded |
 | `throttle` | `0.0` | Remaining-capacity ratio where backoff begins; `0.0` = disabled |
 | `logger` | `nil` | Ruby Logger instance (global-only) |
 | `log_level` | `Logger::INFO` | Log level applied to the logger (global-only) |

@@ -249,9 +249,18 @@ class ChannelThrottleTest < Minitest::Test
 
   def test_throttle_integer_coerced_to_float
     # throttle: 0 should be treated as 0.0 (disabled)
-    channel = make_channel(max_pending: 10, throttle: 0)
-    channel.subscribe { |d| d.ack! }
-    Async { channel.publish("msg") }
-    # should not raise, treated as disabled
+    stats = TypedBus::Stats.new
+    channel = make_channel(max_pending: 2, throttle: 0, stats: stats)
+    held = []
+    channel.subscribe { |d| held << d }
+
+    Async do
+      # Fill to capacity without acking: an active throttle would back off here.
+      2.times { |i| channel.publish(i) }
+      held.each(&:ack!)
+    end
+
+    assert_equal 2, stats[:test_delivered]
+    assert_equal 0, stats[:test_throttled]
   end
 end

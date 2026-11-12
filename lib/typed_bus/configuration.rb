@@ -24,8 +24,20 @@ module TypedBus
       log_level: Logger::INFO
     }.freeze
 
-    attr_accessor :timeout, :max_pending, :throttle
-    attr_reader :logger, :log_level
+    attr_accessor :timeout, :throttle
+    attr_reader :max_pending, :logger, :log_level
+
+    # Ensure a backpressure limit is usable: +nil+ (unbounded) or a
+    # positive Integer. Zero and negative limits can never accept a publish.
+    #
+    # @param value [Object] candidate max_pending
+    # @raise [ArgumentError] if value is neither nil nor a positive Integer
+    # @return [Integer, nil] the validated value
+    def self.validate_max_pending!(value)
+      return value if value.nil? || (value.is_a?(Integer) && value.positive?)
+
+      raise ArgumentError, "max_pending must be nil or a positive Integer, got #{value.inspect}"
+    end
 
     def initialize
       @timeout     = DEFAULTS[:timeout]
@@ -33,6 +45,13 @@ module TypedBus
       @throttle    = DEFAULTS[:throttle]
       @logger      = DEFAULTS[:logger]
       @log_level   = DEFAULTS[:log_level]
+    end
+
+    # Set the backpressure limit.
+    # @param value [Integer, nil] a positive Integer, or nil for unbounded
+    # @raise [ArgumentError] if value is neither nil nor a positive Integer
+    def max_pending=(value)
+      @max_pending = self.class.validate_max_pending!(value)
     end
 
     # Set the logger and apply the current log_level to it.
@@ -62,11 +81,6 @@ module TypedBus
         max_pending: max_pending == :use_default ? @max_pending : max_pending,
         throttle:    throttle    == :use_default ? @throttle    : throttle
       }
-    end
-
-    def initialize_copy(_source)
-      # All fields are scalars or intentionally shared (Logger).
-      # No deep-copy needed.
     end
   end
 end

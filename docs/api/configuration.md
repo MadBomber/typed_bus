@@ -9,7 +9,7 @@ Holds configurable defaults for the message bus system. Supports three-tier casc
 | Attribute | Type | Default | Description |
 |-----------|------|---------|-------------|
 | `timeout` | `Numeric` | `30` | Delivery ACK deadline in seconds |
-| `max_pending` | `Integer`, `nil` | `nil` | Backpressure limit; `nil` = unbounded |
+| `max_pending` | `Integer`, `nil` | `nil` | Backpressure limit (positive `Integer`); `nil` = unbounded |
 | `throttle` | `Float` | `0.0` | Remaining-capacity ratio where backoff begins |
 | `logger` | `Logger`, `nil` | `nil` | Ruby Logger instance |
 | `log_level` | `Integer` | `Logger::INFO` | Log level applied to the logger |

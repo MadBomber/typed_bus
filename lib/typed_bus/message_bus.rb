@@ -22,6 +22,7 @@ module TypedBus
     # @param throttle [Float, Symbol] default throttle threshold for all channels (overrides global default)
     def initialize(timeout: :use_default, max_pending: :use_default, throttle: :use_default)
       global  = TypedBus.configuration
+      # Shallow copy is enough: fields are scalars, and the Logger is shared on purpose.
       @config = global.dup
       resolved = global.resolve(timeout: timeout, max_pending: max_pending, throttle: throttle)
       @config.timeout     = resolved[:timeout]

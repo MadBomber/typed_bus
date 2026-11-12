@@ -331,4 +331,16 @@ class MessageBusTest < Minitest::Test
   ensure
     TypedBus.logger = original
   end
+
+  # --- max_pending validation ---
+
+  def test_bus_rejects_invalid_max_pending
+    assert_raises(ArgumentError) { TypedBus::MessageBus.new(max_pending: 0) }
+    assert_raises(ArgumentError) { TypedBus::MessageBus.new(max_pending: -1) }
+  end
+
+  def test_add_channel_rejects_invalid_max_pending
+    assert_raises(ArgumentError) { @bus.add_channel(:bad, max_pending: 0) }
+    refute @bus.channel?(:bad)
+  end
 end

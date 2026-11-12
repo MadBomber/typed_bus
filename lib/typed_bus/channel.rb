@@ -15,9 +15,10 @@ module TypedBus
     # @param name [Symbol] channel name
     # @param type [Class, nil] optional type constraint for messages
     # @param timeout [Numeric] seconds before delivery auto-nacks (default: 30)
-    # @param max_pending [Integer, nil] backpressure limit (nil = unbounded)
+    # @param max_pending [Integer, nil] backpressure limit; a positive Integer or nil (unbounded)
     # @param stats [Stats, nil] optional stats tracker for counters
     # @param throttle [Float] capacity ratio (0.0..1.0) at which asymptotic backoff begins (0.0 = disabled)
+    # @raise [ArgumentError] if max_pending or throttle is invalid
     def initialize(name, type: nil, timeout: 30, max_pending: nil, stats: nil, throttle: 0.0)
       @name              = name
       @type              = type
@@ -33,6 +34,7 @@ module TypedBus
       @dead_letter_queue = DeadLetterQueue.new
       @backpressure      = Async::Condition.new
 
+      Configuration.validate_max_pending!(@max_pending)
       validate_throttle_config!
 
       log(:info, "channel created (type=#{type || 'any'}, timeout=#{timeout}s, max_pending=#{max_pending || 'unbounded'}, throttle=#{@throttle > 0 ? "#{(@throttle * 100).round}%" : 'off'})")
@@ -53,7 +55,10 @@ module TypedBus
       apply_throttle! if throttled?
       wait_for_capacity if bounded?
 
-      subscriber_ids = @subscribers.keys
+      # Snapshot ids and handlers together so every id the tracker waits on
+      # gets a Delivery, even if a handler unsubscribes someone mid-publish.
+      subscribers    = @subscribers.to_a
+      subscriber_ids = subscribers.map(&:first)
 
       if subscriber_ids.empty?
         log(:warn, "published with no subscribers, routing to DLQ (message=#{message.class})")
@@ -69,10 +74,7 @@ module TypedBus
       tracker.on_complete { record_stat(:delivered) }
       tracker.on_resolved { tracker_resolved(tracker) }
 
-      subscriber_ids.each do |sub_id|
-        handler = @subscribers[sub_id]
-        next unless handler
-
+      subscribers.each do |sub_id, handler|
         delivery = Delivery.new(
           message,
           channel_name: @name,
