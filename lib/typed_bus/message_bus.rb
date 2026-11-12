@@ -20,6 +20,7 @@ module TypedBus
     # @param timeout [Numeric, Symbol] delivery ACK deadline (overrides global default)
     # @param max_pending [Integer, nil, Symbol] backpressure limit (overrides global default)
     # @param throttle [Float, Symbol] default throttle threshold for all channels (overrides global default)
+    # @raise [ArgumentError] if max_pending or throttle is invalid
     def initialize(timeout: :use_default, max_pending: :use_default, throttle: :use_default)
       global  = TypedBus.configuration
       # Shallow copy is enough: fields are scalars, and the Logger is shared on purpose.
@@ -41,10 +42,11 @@ module TypedBus
     # config value is used. Pass an explicit value to override for this channel.
     #
     # @param name [Symbol]
-    # @param type [Class, nil] optional type constraint
-    # @param timeout [Numeric, Symbol] delivery ACK deadline in seconds
+    # @param type [Class, Module, nil] optional type constraint
+    # @param timeout [Numeric, nil, Symbol] delivery ACK deadline in seconds; nil = never auto-nack
     # @param max_pending [Integer, nil, Symbol] backpressure limit
     # @param throttle [Float, Symbol] capacity ratio where backoff begins (0.0 = disabled)
+    # @raise [ArgumentError] if type, max_pending, or throttle is invalid
     # @return [Channel]
     def add_channel(name, type: nil, timeout: :use_default, max_pending: :use_default, throttle: :use_default)
       resolved = @config.resolve(timeout: timeout, max_pending: max_pending, throttle: throttle)
@@ -52,7 +54,7 @@ module TypedBus
       effective_max_pending = resolved[:max_pending]
       effective_throttle    = resolved[:throttle]
 
-      log(:info, "adding channel :#{name} (type=#{type || 'any'}, timeout=#{effective_timeout}s, max_pending=#{effective_max_pending || 'unbounded'})")
+      log(:info, "adding channel :#{name} (type=#{type || 'any'}, timeout=#{effective_timeout ? "#{effective_timeout}s" : 'none'}, max_pending=#{effective_max_pending || 'unbounded'})")
       channel = Channel.new(name, type: type, timeout: effective_timeout, max_pending: effective_max_pending, stats: @stats, throttle: effective_throttle)
       @channels[name] = channel
       channel

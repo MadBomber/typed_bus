@@ -167,4 +167,30 @@ class ConfigurationTest < Minitest::Test
     assert_equal 3, TypedBus::Configuration.validate_max_pending!(3)
     assert_nil TypedBus::Configuration.validate_max_pending!(nil)
   end
+
+  # --- throttle validation ---
+
+  def test_throttle_setter_rejects_out_of_range_and_non_numeric
+    [1.0, 1.5, -3, -0.1, "fast", :half, Float::NAN, Complex(0.5, 1)].each do |bad|
+      error = assert_raises(ArgumentError, "expected #{bad.inspect} to be rejected") { @config.throttle = bad }
+      assert_includes error.message, "throttle must be 0 (off) or between 0.0 and 1.0 (exclusive)"
+    end
+    assert_equal 0.0, @config.throttle
+  end
+
+  def test_throttle_setter_accepts_off_and_in_range_values
+    [nil, 0, 0.0, 0.5, Rational(1, 4)].each do |good|
+      @config.throttle = good
+      if good.nil?
+        assert_nil @config.throttle
+      else
+        assert_equal good, @config.throttle
+      end
+    end
+  end
+
+  def test_validate_throttle_appends_context
+    error = assert_raises(ArgumentError) { TypedBus::Configuration.validate_throttle!(2, " on channel :x") }
+    assert_equal "throttle must be 0 (off) or between 0.0 and 1.0 (exclusive), got 2 on channel :x", error.message
+  end
 end

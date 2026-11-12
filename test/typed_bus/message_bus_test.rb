@@ -343,4 +343,32 @@ class MessageBusTest < Minitest::Test
     assert_raises(ArgumentError) { @bus.add_channel(:bad, max_pending: 0) }
     refute @bus.channel?(:bad)
   end
+
+  # --- throttle and type validation ---
+
+  def test_bus_rejects_invalid_throttle_at_construction
+    assert_raises(ArgumentError) { TypedBus::MessageBus.new(throttle: 1.5, max_pending: 10) }
+    assert_raises(ArgumentError) { TypedBus::MessageBus.new(throttle: "fast", max_pending: 5) }
+  end
+
+  def test_add_channel_rejects_non_numeric_throttle
+    assert_raises(ArgumentError) { @bus.add_channel(:bad, max_pending: 5, throttle: "fast") }
+    refute @bus.channel?(:bad)
+  end
+
+  def test_add_channel_rejects_non_class_type
+    assert_raises(ArgumentError) { @bus.add_channel(:bad, type: "Order") }
+    refute @bus.channel?(:bad)
+  end
+
+  def test_add_channel_logs_nil_timeout_as_none
+    original = TypedBus.logger
+    output = StringIO.new
+    TypedBus.logger = Logger.new(output)
+    @bus.add_channel(:forever, timeout: nil)
+
+    assert_includes output.string, "adding channel :forever (type=any, timeout=none,"
+  ensure
+    TypedBus.logger = original
+  end
 end

@@ -42,9 +42,27 @@
   closed while the publisher is sleeping in the throttle or blocked on
   backpressure. Previously that publish still delivered into the closed
   channel and left a delivery pending until its timeout.
+- A raising `on_dead_letter` callback no longer drops the `nacked`/`timed_out`
+  and `dead_lettered` stats for that delivery. The channel now records them
+  before it pushes to the dead letter queue (#36).
+- The DEBUG "backpressure: waiting for capacity" and "capacity available"
+  lines are logged only when a publisher actually waits, not on every
+  publish to a bounded channel (#31).
+- `timeout: nil` now logs as `timeout=none` instead of `timeout=s`, and the
+  option tables document that `nil` means never auto-nack (#27).
 
 ### Changed
 
+- A channel's `type:` must be `nil`, a `Class`, or a `Module`. `Channel.new`
+  and `MessageBus#add_channel` raise `ArgumentError` for anything else;
+  previously the channel was created and every publish raised a bare
+  `TypeError` (#34).
+- `throttle` must be `nil`, `0`, or a number strictly between 0 and 1.
+  `Configuration#throttle=`, `MessageBus.new`, `MessageBus#add_channel`, and
+  `Channel.new` raise `ArgumentError` for anything else as soon as it is set.
+  Previously an out-of-range bus or global throttle failed only when a
+  channel was added, and a non-numeric one silently turned throttling
+  off (#33).
 - `ratatui_ruby` and `aigcm` moved to an optional `:extras` bundle group;
   the default bundle no longer builds a Rust native extension.
 - Refreshed `Gemfile.lock` to async 2.46.0 (#14).

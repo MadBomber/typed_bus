@@ -24,8 +24,9 @@ module TypedBus
       log_level: Logger::INFO
     }.freeze
 
-    attr_accessor :timeout, :throttle
-    attr_reader :max_pending, :logger, :log_level
+    # @return [Numeric, nil] delivery ACK deadline in seconds; nil = never auto-nack
+    attr_accessor :timeout
+    attr_reader :max_pending, :throttle, :logger, :log_level
 
     # Ensure a backpressure limit is usable: +nil+ (unbounded) or a
     # positive Integer. Zero and negative limits can never accept a publish.
@@ -37,6 +38,21 @@ module TypedBus
       return value if value.nil? || (value.is_a?(Integer) && value.positive?)
 
       raise ArgumentError, "max_pending must be nil or a positive Integer, got #{value.inspect}"
+    end
+
+    # Ensure a throttle threshold is usable: +nil+ or +0+ (off), or a real
+    # number strictly between 0 and 1. Whether the channel is bounded is
+    # checked when the channel is created.
+    #
+    # @param value [Object] candidate throttle
+    # @param context [String, nil] text appended to the error message
+    # @raise [ArgumentError] if value is not nil, 0, or a number in (0, 1)
+    # @return [Numeric, nil] the validated value
+    def self.validate_throttle!(value, context = nil)
+      return value if value.nil?
+      return value if value.is_a?(Numeric) && value.real? && (value.zero? || (value > 0 && value < 1))
+
+      raise ArgumentError, "throttle must be 0 (off) or between 0.0 and 1.0 (exclusive), got #{value.inspect}#{context}"
     end
 
     def initialize
@@ -52,6 +68,13 @@ module TypedBus
     # @raise [ArgumentError] if value is neither nil nor a positive Integer
     def max_pending=(value)
       @max_pending = self.class.validate_max_pending!(value)
+    end
+
+    # Set the throttle threshold.
+    # @param value [Numeric, nil] 0 or nil for off, or a number strictly between 0 and 1
+    # @raise [ArgumentError] if value is not nil, 0, or a number in (0, 1)
+    def throttle=(value)
+      @throttle = self.class.validate_throttle!(value)
     end
 
     # Set the logger and apply the current log_level to it.

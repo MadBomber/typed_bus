@@ -476,9 +476,10 @@ class ChannelTest < Minitest::Test
 
     Async { channel.publish("msg") }
 
-    # First subscriber ran; second was unsubscribed mid-iteration
-    # The handler lookup returns nil, so `next unless handler` fires
-    assert_includes received, :first
+    # publish iterates a snapshot of the subscribers, so the second one
+    # still receives this in-flight message after being unsubscribed.
+    assert_equal [:first, :second], received
+    assert_equal 1, channel.subscriber_count
   end
 
   # --- Subscriber error when delivery already resolved ---
@@ -625,5 +626,117 @@ class ChannelTest < Minitest::Test
   def test_max_pending_positive_integer_and_nil_accepted
     assert_instance_of TypedBus::Channel, make_channel(max_pending: 1)
     assert_instance_of TypedBus::Channel, make_channel(max_pending: nil)
+  end
+
+  # --- type validation ---
+
+  def test_non_class_type_rejected_at_construction
+    ["Order", :order, 42].each do |bad|
+      error = assert_raises(ArgumentError) { make_channel(type: bad) }
+      assert_equal "type must be a Class or Module, got #{bad.inspect} on channel :test", error.message
+    end
+  end
+
+  def test_class_module_and_nil_type_accepted
+    assert_equal String, make_channel(type: String).type
+    assert_equal Comparable, make_channel(type: Comparable).type
+    assert_nil make_channel(type: nil).type
+  end
+
+  def test_module_typed_channel_accepts_including_objects
+    channel = make_channel(type: Comparable)
+    received = []
+    channel.subscribe { |d| received << d.message; d.ack! }
+
+    Async { channel.publish("text") }
+
+    assert_equal ["text"], received
+
+    error = nil
+    Async { channel.publish(Object.new) rescue error = $! }
+    assert_instance_of ArgumentError, error
+  end
+
+  # --- stats survive a raising on_dead_letter callback ---
+
+  def test_raising_dead_letter_callback_still_records_nack_stats
+    stats = TypedBus::Stats.new
+    channel = make_channel(stats: stats)
+    channel.dead_letter_queue.on_dead_letter { |_| raise "alert hook down" }
+    channel.subscribe { |d| d.nack! }
+
+    Async { channel.publish("msg") }
+
+    assert_equal 1, stats[:test_nacked]
+    assert_equal 1, stats[:test_dead_lettered]
+    assert_equal 1, channel.dead_letter_queue.size
+  end
+
+  def test_raising_dead_letter_callback_still_records_no_subscriber_stats
+    stats = TypedBus::Stats.new
+    channel = make_channel(stats: stats)
+    channel.dead_letter_queue.on_dead_letter { |_| raise "alert hook down" }
+
+    error = nil
+    Async { channel.publish("orphan") rescue error = $! }
+
+    assert_equal "alert hook down", error&.message
+
+    assert_equal 1, stats[:test_nacked]
+    assert_equal 1, stats[:test_dead_lettered]
+  end
+
+  # --- log text ---
+
+  def capture_log(level = Logger::DEBUG)
+    original = TypedBus.logger
+    output = StringIO.new
+    logger = Logger.new(output)
+    TypedBus.logger = logger
+    logger.level = level
+    yield
+    output.string
+  ensure
+    TypedBus.logger = original
+  end
+
+  def test_nil_timeout_logs_as_none
+    log = capture_log { make_channel(timeout: nil) }
+
+    assert_includes log, "timeout=none,"
+    refute_includes log, "timeout=s"
+  end
+
+  def test_numeric_timeout_logs_seconds
+    log = capture_log { make_channel(timeout: 5) }
+
+    assert_includes log, "timeout=5s,"
+  end
+
+  def test_no_backpressure_log_when_under_capacity
+    log = capture_log do
+      channel = make_channel(max_pending: 10)
+      channel.subscribe { |d| d.ack! }
+      Async { channel.publish("msg") }
+    end
+
+    refute_includes log, "backpressure"
+  end
+
+  def test_backpressure_logged_when_publisher_waits
+    log = capture_log do
+      channel = make_channel(max_pending: 1, timeout: 1)
+      held = []
+      channel.subscribe { |d| held << d }
+      Async do |task|
+        channel.publish(1)
+        task.async { sleep 0.02; held.shift.ack! }
+        channel.publish(2)
+        held.shift.ack!
+      end
+    end
+
+    assert_equal 1, log.scan("backpressure: waiting for capacity (pending=1, max=1)").size
+    assert_equal 1, log.scan("backpressure: capacity available").size
   end
 end

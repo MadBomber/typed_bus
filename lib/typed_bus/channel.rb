@@ -13,19 +13,19 @@ module TypedBus
     attr_reader :name, :type, :dead_letter_queue
 
     # @param name [Symbol] channel name
-    # @param type [Class, nil] optional type constraint for messages
-    # @param timeout [Numeric] seconds before delivery auto-nacks (default: 30)
+    # @param type [Class, Module, nil] optional type constraint for messages
+    # @param timeout [Numeric, nil] seconds before delivery auto-nacks (default: 30); nil = never auto-nack
     # @param max_pending [Integer, nil] backpressure limit; a positive Integer or nil (unbounded)
     # @param stats [Stats, nil] optional stats tracker for counters
     # @param throttle [Float] capacity ratio (0.0..1.0) at which asymptotic backoff begins (0.0 = disabled)
-    # @raise [ArgumentError] if max_pending or throttle is invalid
+    # @raise [ArgumentError] if type, max_pending, or throttle is invalid
     def initialize(name, type: nil, timeout: 30, max_pending: nil, stats: nil, throttle: 0.0)
       @name              = name
       @type              = type
       @timeout           = timeout
       @max_pending       = max_pending
       @stats             = stats
-      @throttle          = throttle.to_f
+      @throttle          = Configuration.validate_throttle!(throttle, " on channel :#{name}").to_f
       @subscribers       = {}
       @next_subscriber_id = 0
       @pending_deliveries = {}
@@ -34,10 +34,11 @@ module TypedBus
       @dead_letter_queue = DeadLetterQueue.new
       @backpressure      = Async::Condition.new
 
+      validate_type_config!
       Configuration.validate_max_pending!(@max_pending)
       validate_throttle_config!
 
-      log(:info, "channel created (type=#{type || 'any'}, timeout=#{timeout}s, max_pending=#{max_pending || 'unbounded'}, throttle=#{@throttle > 0 ? "#{(@throttle * 100).round}%" : 'off'})")
+      log(:info, "channel created (type=#{type || 'any'}, timeout=#{timeout ? "#{timeout}s" : 'none'}, max_pending=#{max_pending || 'unbounded'}, throttle=#{@throttle > 0 ? "#{(@throttle * 100).round}%" : 'off'})")
     end
 
     # Publish a message to all current subscribers.
@@ -89,13 +90,10 @@ module TypedBus
           on_nack: ->(_id) {
             @active_deliveries.delete(delivery)
             tracker.nack(sub_id)
-            @dead_letter_queue.push(delivery)
+            # Count before pushing: the DLQ runs a user callback that may raise.
             record_stat(:dead_lettered)
-            if delivery.timed_out?
-              record_stat(:timed_out)
-            else
-              record_stat(:nacked)
-            end
+            record_stat(delivery.timed_out? ? :timed_out : :nacked)
+            @dead_letter_queue.push(delivery)
           }
         )
 
@@ -191,16 +189,17 @@ module TypedBus
       raise "Channel :#{@name} is closed" if @closed
     end
 
+    def validate_type_config!
+      return if @type.nil? || @type.is_a?(Module)
+
+      raise ArgumentError, "type must be a Class or Module, got #{@type.inspect} on channel :#{@name}"
+    end
+
+    # The range is checked by Configuration.validate_throttle! in #initialize.
     def validate_throttle_config!
-      return if @throttle == 0.0
+      return if @throttle == 0.0 || bounded?
 
-      unless bounded?
-        raise ArgumentError, "throttle requires max_pending on channel :#{@name}"
-      end
-
-      unless @throttle > 0.0 && @throttle < 1.0
-        raise ArgumentError, "throttle must be between 0.0 and 1.0 (exclusive), got #{@throttle} on channel :#{@name}"
-      end
+      raise ArgumentError, "throttle requires max_pending on channel :#{@name}"
     end
 
     def throttled?
@@ -234,6 +233,8 @@ module TypedBus
     end
 
     def wait_for_capacity
+      return if @pending_deliveries.size < @max_pending
+
       log(:debug, "backpressure: waiting for capacity (pending=#{@pending_deliveries.size}, max=#{@max_pending})")
       while @pending_deliveries.size >= @max_pending && !@closed
         @backpressure.wait
@@ -255,9 +256,9 @@ module TypedBus
     def dead_letter_no_subscribers(message)
       delivery = Delivery.new(message, channel_name: @name, subscriber_id: -1)
       delivery.nack!
-      @dead_letter_queue.push(delivery)
       record_stat(:nacked)
       record_stat(:dead_lettered)
+      @dead_letter_queue.push(delivery)
     end
 
     def record_stat(suffix)
