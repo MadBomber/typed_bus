@@ -301,6 +301,33 @@ class ChannelTest < Minitest::Test
     end
   end
 
+  def test_close_while_blocked_on_backpressure_rejects_publish
+    channel = make_channel(max_pending: 1, timeout: 1)
+    received = []
+    channel.subscribe { |d| received << d.message } # never acks
+
+    error = nil
+    Async do |task|
+      task.with_timeout(2) do
+        channel.publish("first")
+        publisher = task.async do
+          channel.publish("second") # blocks at capacity
+        rescue RuntimeError => e
+          error = e
+        end
+
+        sleep(0.01)
+        channel.close
+        publisher.wait
+        sleep(0.01)
+      end
+    end
+
+    assert_match(/Channel :test is closed/, error&.message)
+    assert_equal ["first"], received
+    assert_equal 0, channel.pending_count
+  end
+
   # --- Attr readers ---
 
   def test_name_attr_reader

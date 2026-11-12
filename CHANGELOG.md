@@ -35,6 +35,10 @@
   non-Integer values instead of hanging or crashing on a later publish (#5).
 - Logging examples 11-14 now print their DEBUG output (#17), and
   `examples/15_performance.rb` no longer requires the unused `csv` gem (#19).
+- `Channel#publish` now raises the closed-channel error when the channel is
+  closed while the publisher is sleeping in the throttle or blocked on
+  backpressure. Previously that publish still delivered into the closed
+  channel and left a delivery pending until its timeout.
 
 ### Changed
 
