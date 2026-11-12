@@ -14,7 +14,7 @@
   (`1 / 0`) and slept indefinitely; the throttle now yields at full capacity
   and lets backpressure block the publisher instead. Found and fixed by
   BomberBot.
-- The packaged gem now contains only the committed `lib/**/*.rb` files,
+- The packaged gem now contains only the git-tracked `lib/**/*.rb` files,
   `README.md`, and `CHANGELOG.md` (plus a `LICENSE*` file once one is
   added). It previously shipped the docs site (including a 16.6 MB GIF and
   a 2.7 MB MP4), examples, CI workflows, and local dotfiles, making the
