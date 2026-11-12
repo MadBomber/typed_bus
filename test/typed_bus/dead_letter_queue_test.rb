@@ -69,6 +69,21 @@ class DeadLetterQueueTest < Minitest::Test
     assert_equal 3, dlq.size
   end
 
+  def test_drain_block_break_puts_back_only_unyielded_entries
+    dlq = TypedBus::DeadLetterQueue.new
+    %w[a b c].each { |m| dlq.push(make_delivery(m)) }
+
+    processed = []
+    dlq.drain do |d|
+      processed << d.message
+      break if processed.size == 2
+    end
+
+    # "b" was handled before the break, so only "c" goes back.
+    assert_equal %w[a b], processed
+    assert_equal %w[c], dlq.map(&:message)
+  end
+
   # Raise once a drain block has run more than +limit+ times, so a
   # drain that never ends fails the test instead of hanging the suite.
   def guard_calls(calls, limit = 10)
