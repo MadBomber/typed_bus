@@ -2295,6 +2295,7 @@
 <p><strong>Raises:</strong> <code>ArgumentError</code> for unknown channels, type mismatches. <code>RuntimeError</code> for closed channels.</p>
 <h3 id="subscribechannel_name-block-integer"><code>subscribe(channel_name, &amp;block)</code> → <code>Integer</code><a class="headerlink" href="#subscribechannel_name-block-integer" title="Permanent link">&para;</a></h3>
 <p>Subscribe to a named channel. Returns the subscriber ID.</p>
+<p><strong>Raises:</strong> <code>ArgumentError</code> for unknown channels or when no block is given. <code>RuntimeError</code> for closed channels.</p>
 <h3 id="unsubscribechannel_name-id_or_block"><code>unsubscribe(channel_name, id_or_block)</code><a class="headerlink" href="#unsubscribechannel_name-id_or_block" title="Permanent link">&para;</a></h3>
 <p>Remove a subscriber by ID or block reference.</p>
 <h2 id="query">Query<a class="headerlink" href="#query" title="Permanent link">&para;</a></h2>

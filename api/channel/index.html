@@ -2180,7 +2180,7 @@
 <p><strong>Raises:</strong> <code>ArgumentError</code> for type mismatches. <code>RuntimeError</code> if closed.</p>
 <h3 id="subscribeblock-integer"><code>subscribe(&amp;block)</code> → <code>Integer</code><a class="headerlink" href="#subscribeblock-integer" title="Permanent link">&para;</a></h3>
 <p>Subscribe to messages. Returns the subscriber ID.</p>
-<p><strong>Raises:</strong> <code>RuntimeError</code> if closed.</p>
+<p><strong>Raises:</strong> <code>ArgumentError</code> if no block is given. <code>RuntimeError</code> if closed.</p>
 <h3 id="unsubscribeid_or_block"><code>unsubscribe(id_or_block)</code><a class="headerlink" href="#unsubscribeid_or_block" title="Permanent link">&para;</a></h3>
 <p>Remove a subscriber by integer ID or block reference.</p>
 <h2 id="query">Query<a class="headerlink" href="#query" title="Permanent link">&para;</a></h2>
