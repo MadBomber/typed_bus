@@ -110,6 +110,20 @@ class DeadLetterQueueTest < Minitest::Test
     assert dlq.empty?
   end
   
+  def test_drain_block_raise_restores_unprocessed_ahead_of_new_entries
+    dlq = TypedBus::DeadLetterQueue.new
+    %w[a b c].each { |m| dlq.push(make_delivery(m)) }
+
+    assert_raises(RuntimeError) do
+      dlq.drain do |d|
+        dlq.push(make_delivery("new"))
+        raise "boom" if d.message == "b"
+      end
+    end
+
+    assert_equal %w[b c new new], dlq.map(&:message)
+  end
+
   def test_drain_block_republishing_without_subscribers_runs_once
     Sync do
       channel = TypedBus::Channel.new(:retry, timeout: nil)
