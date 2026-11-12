@@ -14,6 +14,11 @@
   (`1 / 0`) and slept indefinitely; the throttle now yields at full capacity
   and lets backpressure block the publisher instead. Found and fixed by
   BomberBot.
+- The packaged gem now contains only `lib/**/*.rb`, `README.md`,
+  `CHANGELOG.md`, and any `LICENSE*` file. It previously shipped the docs
+  site (including a 16.6 MB GIF and a 2.7 MB MP4), examples, CI workflows,
+  and local dotfiles, making the `.gem` about 19.9 MB instead of 15 KB (#3).
+  Found and fixed by BomberBot.
 
 ### Changed
 
