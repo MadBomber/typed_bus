@@ -245,6 +245,35 @@ class ChannelThrottleTest < Minitest::Test
       "publisher at full capacity should proceed after an ack, not sleep forever"
   end
 
+  def test_close_during_throttle_sleep_rejects_publish
+    # 7 of 10 pending leaves 30% remaining, below the 50% threshold,
+    # so the next publish sleeps about 0.33s before delivering.
+    channel = make_channel(max_pending: 10, throttle: 0.5, timeout: 1)
+    received = []
+    channel.subscribe { |d| received << d.message } # never acks
+
+    error = nil
+    Async do |task|
+      task.with_timeout(2) do
+        7.times { |i| channel.publish(i) }
+        publisher = task.async do
+          channel.publish(:late)
+        rescue RuntimeError => e
+          error = e
+        end
+
+        sleep(0.05) # publisher is now inside the throttle sleep
+        channel.close
+        publisher.wait
+        sleep(0.01)
+      end
+    end
+
+    assert_match(/Channel :test is closed/, error&.message)
+    refute_includes received, :late
+    assert_equal 0, channel.pending_count
+  end
+
   # --- Integer coercion ---
 
   def test_throttle_integer_coerced_to_float

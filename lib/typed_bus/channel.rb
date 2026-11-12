@@ -46,14 +46,16 @@ module TypedBus
     #
     # @param message [Object]
     # @raise [ArgumentError] if message doesn't match type constraint
-    # @raise [RuntimeError] if channel is closed
+    # @raise [RuntimeError] if channel is closed, including while the
+    #   publisher was waiting on throttle or backpressure
     # @return [DeliveryTracker] the tracker for this message
     def publish(message)
-      raise "Channel :#{@name} is closed" if @closed
+      ensure_open!
 
       validate_type!(message)
       apply_throttle! if throttled?
       wait_for_capacity if bounded?
+      ensure_open! # the channel may have closed while we waited
 
       # Snapshot ids and handlers together so every id the tracker waits on
       # gets a Delivery, even if a handler unsubscribes someone mid-publish.
@@ -119,7 +121,7 @@ module TypedBus
     # @return [Integer] subscriber id (use for unsubscribe)
     def subscribe(&block)
       raise ArgumentError, "Channel :#{@name} subscribe requires a block" unless block
-      raise "Channel :#{@name} is closed" if @closed
+      ensure_open!
 
       id = next_subscriber_id
       @subscribers[id] = block
@@ -184,6 +186,10 @@ module TypedBus
     end
 
     private
+
+    def ensure_open!
+      raise "Channel :#{@name} is closed" if @closed
+    end
 
     def validate_throttle_config!
       return if @throttle == 0.0
