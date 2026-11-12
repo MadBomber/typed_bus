@@ -207,6 +207,12 @@ class MessageBusTest < Minitest::Test
     assert_match(/Unknown channel/, error.message)
   end
 
+  def test_subscribe_without_block_raises
+    @bus.add_channel(:blockless)
+    error = assert_raises(ArgumentError) { @bus.subscribe(:blockless) }
+    assert_match(/requires a block/, error.message)
+  end
+
   def test_unsubscribe_raises_on_unknown_channel
     error = assert_raises(ArgumentError) { @bus.unsubscribe(:nope, 1) }
     assert_match(/Unknown channel/, error.message)

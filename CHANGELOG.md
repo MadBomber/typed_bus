@@ -2,6 +2,11 @@
 
 ### Fixed
 
+- `Channel#subscribe` and `MessageBus#subscribe` now raise `ArgumentError`
+  when called without a block. Previously a blockless subscriber was
+  registered with a nil handler, so every published message waited on an
+  acknowledgment that could never arrive, and a bounded channel blocked
+  publishers forever (#16). Found and fixed by BomberBot.
 - `DeadLetterQueue#drain` no longer loses entries when the block raises
   partway through. Entries are now removed only after they are successfully
   yielded, so a raising block leaves the remaining entries in the queue for

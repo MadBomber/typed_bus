@@ -68,6 +68,8 @@ Publish a message to a named channel. Returns the `DeliveryTracker` or `nil` if 
 
 Subscribe to a named channel. Returns the subscriber ID.
 
+**Raises:** `ArgumentError` for unknown channels or when no block is given. `RuntimeError` for closed channels.
+
 ### `unsubscribe(channel_name, id_or_block)`
 
 Remove a subscriber by ID or block reference.
