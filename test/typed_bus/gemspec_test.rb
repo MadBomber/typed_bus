@@ -21,6 +21,7 @@ class GemspecTest < Minitest::Test
   end
 
   def test_packages_entry_point_readme_and_changelog
-    %w[lib/typed_bus.rb README.md CHANGELOG.md].each { |path| assert_includes spec.files, path }
+    files = spec.files
+    %w[lib/typed_bus.rb README.md CHANGELOG.md].each { |path| assert_includes files, path }
   end
 end
