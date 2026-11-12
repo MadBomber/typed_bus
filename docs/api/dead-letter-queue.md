@@ -32,6 +32,10 @@ Iterate over dead letters without removing them.
 
 Yield each dead letter and remove it from the queue. Returns the drained entries. Without a block, just removes and returns them.
 
+`drain` works on a snapshot. The queue is emptied before the first yield, so `size` is `0` and `each` sees nothing while the block runs, apart from entries added during the drain. Those entries (such as a retry that fails again) stay queued for the next drain, so a drain-and-retry block does not loop.
+
+If the block raises, the entry it was handling and the entries not yet yielded go back to the front of the queue in their original order, and the error propagates. If the block exits early with `break`, the entry it was handling counts as done and only the entries not yet yielded go back.
+
 ### `clear!`
 
 Discard all entries.

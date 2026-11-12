@@ -25,13 +25,16 @@ bundle exec ruby examples/01_basic_usage.rb
 | 12 | `12_logging_failures.rb` | Failure-path logging: explicit nacks, delivery timeouts, no-subscriber dead-lettering, DLQ drain. Colorized output. |
 | 13 | `13_logging_backpressure.rb` | Backpressure logging. DEBUG-level messages as the publisher fiber blocks and resumes while a slow subscriber drains a bounded channel. |
 | 14 | `14_adaptive_throttling.rb` | Adaptive rate limiting with `throttle: Float`. Asymptotic backoff as a bounded channel fills, bus-level throttle defaults with per-channel overrides. |
+| 15 | `15_performance.rb` | Live terminal dashboard (throughput, RSS, GC) over several independent buses with immediate acks. Needs the optional `ratatui_ruby` gem: `bundle config set --local with extras && bundle install`, then `bundle exec ruby examples/15_performance.rb`. Writes `perf_metrics.csv`. |
 
 ## Running All Examples
 
 ```bash
-for f in examples/*.rb; do
+for f in examples/0*.rb examples/1[0-4]*.rb; do
   echo "=== $f ==="
   bundle exec ruby "$f"
   echo
 done
 ```
+
+The loop skips `15_performance.rb`: it is an interactive terminal dashboard that runs until you press `q`, and it needs the optional `ratatui_ruby` gem. Run it by hand as shown in its row above.
