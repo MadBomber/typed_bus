@@ -24,13 +24,32 @@
   added). It previously shipped the docs site (including a 16.6 MB GIF and
   a 2.7 MB MP4), examples, CI workflows, and local dotfiles, making the
   `.gem` about 19.9 MB instead of 15 KB (#3). Found and fixed by BomberBot.
+- Unsubscribing a subscriber while a publish is fanning out no longer leaves
+  that message's delivery tracker pending forever (and, on a bounded channel,
+  holding a `max_pending` slot). `Channel#publish` now snapshots subscriber
+  ids and handlers together, so a subscriber removed mid-publish still
+  receives that one message (#4).
+- `max_pending` must be `nil` or a positive `Integer`. `Channel.new`,
+  `MessageBus.new`, `MessageBus#add_channel`, and
+  `Configuration#max_pending=` raise `ArgumentError` for `0`, negative, or
+  non-Integer values instead of hanging or crashing on a later publish (#5).
+- Logging examples 11-14 now print their DEBUG output (#17), and
+  `examples/15_performance.rb` no longer requires the unused `csv` gem (#19).
 
 ### Changed
 
+- `ratatui_ruby` and `aigcm` moved to an optional `:extras` bundle group;
+  the default bundle no longer builds a Rust native extension.
+- Refreshed `Gemfile.lock` to async 2.46.0 (#14).
+- Removed the no-op `Configuration#initialize_copy` override (#21).
 - Renamed gem from `async_typed_bus` to `typed_bus` (module `TypedBus`).
 
 ### Added
 
+- MIT `LICENSE` file (#11); `documentation_uri`, `bug_tracker_uri`, and
+  `rubygems_mfa_required` gemspec metadata (#12).
+- CI workflow running the test suite on Ruby 3.2-4.0 plus a load smoke test
+  outside the dev bundle (#20); Dependabot configuration (#15).
 - Adaptive rate limiting via `throttle: Float` on Channel and MessageBus.
   The value (0.0 to 1.0) sets the remaining-capacity ratio where asymptotic
   backoff begins. Below that threshold, each publish sleeps for
