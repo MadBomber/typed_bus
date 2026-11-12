@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require "test_helper"
+require "timeout"
 
 class DeadLetterQueueTest < Minitest::Test
   def make_delivery(msg = "payload")
@@ -66,6 +67,78 @@ class DeadLetterQueueTest < Minitest::Test
     assert_equal %w[a b], processed
     assert_equal %w[c d e], dlq.map(&:message)
     assert_equal 3, dlq.size
+  end
+
+  # Raise once a drain block has run more than +limit+ times, so a
+  # drain that never ends fails the test instead of hanging the suite.
+  def guard_calls(calls, limit = 10)
+    raise "drain looped: #{calls} calls" if calls > limit
+  end
+
+  def test_drain_block_pushing_entry_back_yields_it_once
+    dlq = TypedBus::DeadLetterQueue.new
+    dlq.push(make_delivery("a"))
+
+    calls = 0
+    drained = Timeout.timeout(1) do
+      dlq.drain do |d|
+        guard_calls(calls += 1)
+        dlq.push(d)
+      end
+    end
+
+    assert_equal 1, calls
+    assert_equal %w[a], drained.map(&:message)
+    assert_equal %w[a], dlq.map(&:message)
+  end
+
+  def test_drain_block_calling_clear_returns_all_entries
+    dlq = TypedBus::DeadLetterQueue.new
+    %w[a b].each { |m| dlq.push(make_delivery(m)) }
+
+    yielded = []
+    drained = Timeout.timeout(1) do
+      dlq.drain do |d|
+        guard_calls(yielded.size)
+        yielded << d.message
+        dlq.clear!
+      end
+    end
+
+    assert_equal %w[a b], yielded
+    assert_equal %w[a b], drained.map(&:message)
+    assert dlq.empty?
+  end
+
+  def test_drain_block_raise_restores_unprocessed_ahead_of_new_entries
+    dlq = TypedBus::DeadLetterQueue.new
+    %w[a b c].each { |m| dlq.push(make_delivery(m)) }
+
+    assert_raises(RuntimeError) do
+      dlq.drain do |d|
+        dlq.push(make_delivery("new"))
+        raise "boom" if d.message == "b"
+      end
+    end
+
+    assert_equal %w[b c new new], dlq.map(&:message)
+  end
+
+  def test_drain_block_republishing_without_subscribers_runs_once
+    Sync do
+      channel = TypedBus::Channel.new(:retry, timeout: nil)
+      channel.publish("m")
+      assert_equal 1, channel.dead_letter_queue.size
+
+      calls = 0
+      channel.dead_letter_queue.drain do |d|
+        guard_calls(calls += 1)
+        channel.publish(d.message)
+      end
+
+      assert_equal 1, calls
+      assert_equal %w[m], channel.dead_letter_queue.map(&:message)
+    end
   end
 
   def test_clear_empties_queue

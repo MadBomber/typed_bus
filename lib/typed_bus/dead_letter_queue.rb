@@ -35,22 +35,27 @@ module TypedBus
 
     include Enumerable
 
-    # Yield each dead letter and remove it from the queue.
+    # Remove the current entries from the queue and yield each one once.
     #
-    # When a block is given, each entry is removed only after it is
-    # successfully yielded, so a raising block leaves the remaining
-    # entries in the queue for a later retry.
+    # The queue is emptied before the first yield, so while the block
+    # runs, #size and #each see only entries added during the drain.
+    # Those (such as a retry that fails again) stay queued for the next
+    # drain. If the block raises, the entry it was handling and the ones
+    # not yet yielded go back to the front of the queue in their
+    # original order.
     # @return [Array<Delivery>] the drained entries
     def drain
-      drained = []
+      drained, @entries = @entries, []
       if block_given?
-        until @entries.empty?
-          yield @entries.first
-          drained << @entries.shift
+        yielded = 0
+        begin
+          drained.each do |entry|
+            yield entry
+            yielded += 1
+          end
+        ensure
+          @entries.unshift(*drained.drop(yielded))
         end
-      else
-        drained = @entries.dup
-        @entries.clear
       end
       log(:info, "drained #{drained.size} entries")
       drained
