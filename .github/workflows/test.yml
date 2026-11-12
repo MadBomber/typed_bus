@@ -26,6 +26,12 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      # The committed lock tracks current releases, some of which need
+      # Ruby >= 3.3. Ruby 3.2 (the gemspec minimum) resolves its own set.
+      - name: Resolve dependencies fresh on Ruby 3.2
+        if: matrix.ruby == '3.2'
+        run: rm Gemfile.lock
+
       # The optional :extras group (ratatui_ruby, aigcm) is not installed.
       - name: Setup Ruby
         uses: ruby/setup-ruby@v1
