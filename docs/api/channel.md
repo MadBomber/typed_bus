@@ -59,7 +59,7 @@ Publish a message to all current subscribers.
 
 Subscribe to messages. Returns the subscriber ID.
 
-**Raises:** `RuntimeError` if closed.
+**Raises:** `ArgumentError` if no block is given. `RuntimeError` if closed.
 
 ### `unsubscribe(id_or_block)`
 

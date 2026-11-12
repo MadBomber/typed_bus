@@ -112,8 +112,11 @@ module TypedBus
     # Subscribe to messages on this channel.
     # The block receives a +Delivery+ object.
     #
+    # @raise [ArgumentError] if no block is given
+    # @raise [RuntimeError] if channel is closed
     # @return [Integer] subscriber id (use for unsubscribe)
     def subscribe(&block)
+      raise ArgumentError, "Channel :#{@name} subscribe requires a block" unless block
       raise "Channel :#{@name} is closed" if @closed
 
       id = next_subscriber_id

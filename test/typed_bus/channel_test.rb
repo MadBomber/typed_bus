@@ -186,6 +186,13 @@ class ChannelTest < Minitest::Test
     assert_raises(RuntimeError) { channel.subscribe { |d| d.ack! } }
   end
 
+  def test_subscribe_without_block_raises
+    channel = make_channel
+    error = assert_raises(ArgumentError) { channel.subscribe }
+    assert_match(/requires a block/, error.message)
+    assert_equal 0, channel.subscriber_count
+  end
+
   def test_clear_empties_pending_and_dlq
     channel = make_channel(timeout: 1)
     channel.subscribe { |_d| } # never acks

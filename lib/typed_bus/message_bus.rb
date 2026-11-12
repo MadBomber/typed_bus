@@ -77,6 +77,7 @@ module TypedBus
     # Subscribe to a named channel.
     # The block receives a +Delivery+ object.
     # @param channel_name [Symbol]
+    # @raise [ArgumentError] if the channel is unknown or no block is given
     # @return [Integer] subscriber id
     def subscribe(channel_name, &block)
       channel = fetch_channel!(channel_name)
