@@ -22,15 +22,9 @@ Gem::Specification.new do |spec|
   spec.metadata["source_code_uri"] = spec.homepage
   spec.metadata["changelog_uri"] = "#{spec.homepage}/blob/main/CHANGELOG.md"
 
-  gemspec = File.basename(__FILE__)
-  spec.files = IO.popen(%w[git ls-files -z], chdir: __dir__, err: IO::NULL) do |ls|
-    ls.readlines("\x0", chomp: true).reject do |f|
-      (f == gemspec) ||
-        f.start_with?(*%w[bin/ Gemfile .gitignore test/])
-    end
-  end
-  spec.bindir = "exe"
-  spec.executables = spec.files.grep(%r{\Aexe/}) { |f| File.basename(f) }
+  # Allowlist of tracked files to package. :(glob) keeps * from crossing /.
+  packaged = %w[:(glob)lib/**/*.rb :(glob)README.md :(glob)CHANGELOG.md :(glob)LICENSE*]
+  spec.files = IO.popen(["git", "ls-files", "-z", "--", *packaged], chdir: __dir__, err: IO::NULL, &:read).split("\x0")
   spec.require_paths = ["lib"]
 
   spec.add_dependency "async", "~> 2.0"
