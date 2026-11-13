@@ -53,6 +53,10 @@
 
 ### Changed
 
+- The `MessageBus` "Unknown channel" `ArgumentError` now shows the name with
+  `inspect` and lists the registered channels, e.g.
+  `Unknown channel: "orders" (registered: :orders, :payments)`, so a
+  String/Symbol mix-up is visible. Found and fixed by BomberBot.
 - A channel's `type:` must be `nil`, a `Class`, or a `Module`. `Channel.new`
   and `MessageBus#add_channel` raise `ArgumentError` for anything else;
   previously the channel was created and every publish raised a bare
