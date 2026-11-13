@@ -114,6 +114,21 @@ class MessageBusTest < Minitest::Test
     assert_equal 1, dlq.size
   end
 
+  def test_publish_returns_tracker_or_nil_without_subscribers
+    @bus.add_channel(:empty)
+    @bus.add_channel(:busy, timeout: 1)
+    @bus.subscribe(:busy) { |d| d.ack! }
+
+    results = {}
+    Async do
+      results[:empty] = @bus.publish(:empty, "orphan")
+      results[:busy]  = @bus.publish(:busy, "msg")
+    end
+
+    assert_nil results[:empty]
+    assert_instance_of TypedBus::DeliveryTracker, results[:busy]
+  end
+
   def test_close_channel
     @bus.add_channel(:q)
     @bus.close(:q)
