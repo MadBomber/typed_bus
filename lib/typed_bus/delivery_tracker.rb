@@ -16,9 +16,9 @@ module TypedBus
       @message      = message
       @channel_name = channel_name
       @states       = subscriber_ids.each_with_object({}) { |id, h| h[id] = :pending }
-      @on_complete    = nil
-      @on_resolved    = nil
-      @on_dead_letter = nil
+      @on_complete    = []
+      @on_resolved    = []
+      @on_dead_letter = []
       @resolved       = false
     end
 
@@ -52,19 +52,22 @@ module TypedBus
 
     # Register a callback fired when all subscribers have resolved
     # and every one ACKed (successful delivery).
+    # Callbacks accumulate and run in registration order.
     def on_complete(&block)
-      @on_complete = block
+      @on_complete << block if block
     end
 
     # Register a callback fired when all subscribers have resolved,
     # regardless of outcome (acked or nacked). Use for cleanup.
+    # Callbacks accumulate and run in registration order.
     def on_resolved(&block)
-      @on_resolved = block
+      @on_resolved << block if block
     end
 
     # Register a callback fired for each NACK, receiving the subscriber_id.
+    # Callbacks accumulate and run in registration order.
     def on_dead_letter(&block)
-      @on_dead_letter = block
+      @on_dead_letter << block if block
     end
 
     private
@@ -87,17 +90,17 @@ module TypedBus
 
       if fully_delivered?
         log(:info, "fully delivered (all #{@states.size} subscribers acked)")
-        @on_complete&.call
+        @on_complete.each(&:call)
       else
         nacked = @states.count { |_, s| s == :nacked }
         log(:warn, "resolved with #{nacked} nack(s) out of #{@states.size} subscribers")
       end
 
-      @on_resolved&.call
+      @on_resolved.each(&:call)
     end
 
     def fire_dead_letter(subscriber_id)
-      @on_dead_letter&.call(subscriber_id)
+      @on_dead_letter.each { |callback| callback.call(subscriber_id) }
     end
 
     def log(level, message)
