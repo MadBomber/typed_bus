@@ -77,7 +77,8 @@
 - MIT `LICENSE` file (#11); `documentation_uri`, `bug_tracker_uri`, and
   `rubygems_mfa_required` gemspec metadata (#12).
 - CI workflow running the test suite on Ruby 3.2-4.0 plus a load smoke test
-  outside the dev bundle (#20); Dependabot configuration (#15).
+  outside the dev bundle (#20); Dependabot configuration (#15), with its
+  update PRs targeting the `develop` branch (#40).
 
 ## [0.0.1] - 2026-02-07
 
