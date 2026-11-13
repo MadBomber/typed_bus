@@ -63,9 +63,11 @@ bus.add_channel(:logs,   max_pending: 50, throttle: 0.0) # disables throttle
 
 ## Validation
 
-- `throttle` must be between `0.0` and `1.0` (exclusive)
-- `throttle` requires `max_pending` to be set (raises `ArgumentError` otherwise)
-- `throttle: 0.0` disables throttling (the default)
+- `throttle` must be `nil`, `0`, or a number strictly between `0` and `1`. Anything else raises `ArgumentError` as soon as it is set, in `Configuration#throttle=`, `MessageBus.new`, `add_channel`, or `Channel.new`
+- `throttle` requires `max_pending` to be set (raises `ArgumentError` when the channel is created)
+- `throttle: 0.0` (or `0`, or `nil`) disables throttling (the default)
+
+See [Error Handling](error-handling.md#throttle-validation) for examples.
 
 ## Stats
 
