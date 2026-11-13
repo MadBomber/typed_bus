@@ -1870,8 +1870,10 @@
     D -- no --&gt; F{Bounded channel?}
     E --&gt; F
     F -- yes --&gt; G[Wait for capacity]
-    F -- no --&gt; H{Subscribers?}
-    G --&gt; H
+    F -- no --&gt; CL{Closed while waiting?}
+    G --&gt; CL
+    CL -- yes --&gt; ERR
+    CL -- no --&gt; H{Subscribers?}
     H -- none --&gt; I[Route to DLQ]
     H -- 1+ --&gt; J[Create DeliveryTracker]
     J --&gt; K[Fan out Delivery per subscriber]
@@ -1884,7 +1886,8 @@
     O --&gt; Q
     P --&gt; Q
     Q -- yes, all acked --&gt; R[on_complete → delivered stat]
-    Q -- yes, some nacked --&gt; S[on_resolved → cleanup]</code></pre>
+    R --&gt; S[on_resolved → cleanup, free capacity]
+    Q -- yes, some nacked --&gt; S</code></pre>
 <h2 id="step-by-step">Step-by-Step<a class="headerlink" href="#step-by-step" title="Permanent link">&para;</a></h2>
 <h3 id="1-guard-closed-channel">1. Guard: Closed Channel<a class="headerlink" href="#1-guard-closed-channel" title="Permanent link">&para;</a></h3>
 <p>If the channel is closed, <code>publish</code> raises <code>RuntimeError</code>. No message is delivered.</p>
@@ -1893,17 +1896,19 @@
 <h3 id="3-throttle">3. Throttle<a class="headerlink" href="#3-throttle" title="Permanent link">&para;</a></h3>
 <p>If <code>throttle</code> is configured and the channel is bounded, the remaining capacity ratio is checked. Below the threshold, the publisher sleeps for <code>1 / (max_pending * remaining_ratio)</code> seconds — an asymptotic delay that approaches infinity as remaining capacity approaches zero.</p>
 <h3 id="4-backpressure">4. Backpressure<a class="headerlink" href="#4-backpressure" title="Permanent link">&para;</a></h3>
-<p>If the channel is bounded (<code>max_pending</code> is set) and the pending delivery count has reached the limit, the publishing fiber blocks on an <code>Async::Condition</code> until a subscriber ACKs and frees a slot.</p>
+<p>If the channel is bounded (<code>max_pending</code> is set) and the pending delivery count has reached the limit, the publishing fiber blocks on an <code>Async::Condition</code> until a delivery resolves and frees a slot. Any resolution counts: ack, nack, timeout, <code>close</code>, or <code>clear!</code>.</p>
+<p>After the throttle and backpressure waits, the closed guard runs again. If the channel was closed while the publisher slept or waited, <code>publish</code> raises <code>RuntimeError</code> and the message is not delivered.</p>
 <h3 id="5-fan-out">5. Fan-Out<a class="headerlink" href="#5-fan-out" title="Permanent link">&para;</a></h3>
 <p>A <code>DeliveryTracker</code> is created for this message, tracking the set of current subscriber IDs. Each subscriber receives its own <code>Delivery</code> envelope in a separate <code>Async</code> task.</p>
 <h3 id="6-resolution">6. Resolution<a class="headerlink" href="#6-resolution" title="Permanent link">&para;</a></h3>
 <p>Each subscriber must call <code>ack!</code> or <code>nack!</code> on its Delivery. If neither is called before the timeout, the delivery auto-nacks. The tracker aggregates responses:</p>
 <ul>
 <li><strong>All acked</strong> — the <code>on_complete</code> callback fires, incrementing the <code>:delivered</code> stat.</li>
-<li><strong>Any nacked</strong> — the <code>on_resolved</code> callback fires for cleanup. NACKed deliveries are pushed to the dead letter queue.</li>
+<li><strong>Any nacked</strong> — NACKed deliveries are pushed to the dead letter queue.</li>
 </ul>
+<p>In both cases the <code>on_resolved</code> callback then fires for cleanup: it runs once every subscriber has resolved, whatever the outcome.</p>
 <h3 id="7-backpressure-release">7. Backpressure Release<a class="headerlink" href="#7-backpressure-release" title="Permanent link">&para;</a></h3>
-<p>When a tracker resolves, the pending delivery is removed and <code>@backpressure.signal</code> wakes any blocked publisher fiber.</p>
+<p>When a tracker resolves, the pending delivery is removed and <code>@backpressure.signal</code> wakes any blocked publisher fiber. <code>close</code> and <code>clear!</code> also signal, so a waiting publisher re-checks capacity and the closed guard.</p>
 <h2 id="no-subscriber-path">No-Subscriber Path<a class="headerlink" href="#no-subscriber-path" title="Permanent link">&para;</a></h2>
 <p>If there are no subscribers when <code>publish</code> is called, the message is wrapped in a Delivery, immediately NACKed, and pushed to the dead letter queue. The <code>:nacked</code> and <code>:dead_lettered</code> stats are incremented.</p>
 

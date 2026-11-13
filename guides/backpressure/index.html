@@ -1738,7 +1738,7 @@
 
 
 <h1 id="backpressure">Backpressure<a class="headerlink" href="#backpressure" title="Permanent link">&para;</a></h1>
-<p>Set <code>max_pending</code> to bound how many unresolved deliveries a channel allows. When the limit is reached, <code>publish</code> blocks the calling fiber until subscribers ACK and free capacity.</p>
+<p>Set <code>max_pending</code> to bound how many unresolved deliveries a channel allows. When the limit is reached, <code>publish</code> blocks the calling fiber until a delivery resolves and frees capacity. Any resolution counts: ack, nack, timeout, <code>close</code>, or <code>clear!</code>. If the channel is closed while a publisher waits, that publisher raises <code>Channel :name is closed</code>.</p>
 <h2 id="enabling-backpressure">Enabling Backpressure<a class="headerlink" href="#enabling-backpressure" title="Permanent link">&para;</a></h2>
 <div class="language-ruby highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">channel</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="no">TypedBus</span><span class="o">::</span><span class="no">Channel</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="ss">:work</span><span class="p">,</span>
 </span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="w">  </span><span class="ss">max_pending</span><span class="p">:</span><span class="w"> </span><span class="mi">100</span><span class="p">,</span>

@@ -2147,10 +2147,11 @@
 <tr>
 <td><code>throttle</code></td>
 <td><code>0.0</code></td>
-<td>Capacity ratio where backoff begins</td>
+<td>Capacity ratio where backoff begins; <code>0</code> or <code>nil</code> = off, else strictly between 0 and 1</td>
 </tr>
 </tbody>
 </table>
+<p><strong>Raises:</strong> <code>ArgumentError</code> if <code>type</code> is not <code>nil</code>, a <code>Class</code>, or a <code>Module</code>; if <code>max_pending</code> is not <code>nil</code> or a positive <code>Integer</code>; if <code>throttle</code> is out of range; or if <code>throttle</code> is set without <code>max_pending</code>.</p>
 <div class="language-ruby highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">channel</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="no">TypedBus</span><span class="o">::</span><span class="no">Channel</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="ss">:orders</span><span class="p">,</span>
 </span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="w">  </span><span class="ss">type</span><span class="p">:</span><span class="w"> </span><span class="no">Order</span><span class="p">,</span>
 </span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="w">  </span><span class="ss">timeout</span><span class="p">:</span><span class="w"> </span><span class="mi">10</span><span class="p">,</span>

@@ -1790,7 +1790,9 @@
 </span></code></pre></div>
 <p>After closing:</p>
 <ul>
-<li><code>publish</code> raises <code>RuntimeError</code></li>
+<li><code>publish</code> raises <code>RuntimeError</code>, including for publishers that were already
+  waiting on <code>max_pending</code> or throttle when <code>close</code> ran: they wake up and raise
+  <code>Channel :name is closed</code> instead of delivering</li>
 <li><code>subscribe</code> raises <code>RuntimeError</code></li>
 <li>The DLQ retains its entries for inspection</li>
 </ul>
