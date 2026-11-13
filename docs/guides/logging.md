@@ -70,6 +70,7 @@ All log messages are prefixed with the originating component:
 ```
 TypedBus::MessageBus message bus initialized (default_throttle=off)
 TypedBus::Channel[:orders] channel created (type=Order, timeout=10s, max_pending=100, throttle=off)
+TypedBus::MessageBus added channel :orders (type=Order, timeout=10s, max_pending=100)
 TypedBus::Channel[:orders] published message (type=Order, subscribers=2)
 TypedBus::Delivery[:orders#1] acked
 TypedBus::DeliveryTracker[:orders] fully delivered (all 2 subscribers acked)

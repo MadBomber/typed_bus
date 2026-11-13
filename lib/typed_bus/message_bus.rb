@@ -54,8 +54,9 @@ module TypedBus
       effective_max_pending = resolved[:max_pending]
       effective_throttle    = resolved[:throttle]
 
-      log(:info, "adding channel :#{name} (type=#{type || 'any'}, timeout=#{effective_timeout ? "#{effective_timeout}s" : 'none'}, max_pending=#{effective_max_pending || 'unbounded'})")
       channel = Channel.new(name, type: type, timeout: effective_timeout, max_pending: effective_max_pending, stats: @stats, throttle: effective_throttle)
+      # Logged only after Channel.new has validated the arguments, so a rejected add logs nothing here.
+      log(:info, "added channel :#{name} (type=#{type || 'any'}, timeout=#{effective_timeout ? "#{effective_timeout}s" : 'none'}, max_pending=#{effective_max_pending || 'unbounded'})")
       @channels[name] = channel
       channel
     end

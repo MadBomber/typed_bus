@@ -50,6 +50,9 @@
   publish to a bounded channel (#31).
 - `timeout: nil` now logs as `timeout=none` instead of `timeout=s`, and the
   option tables document that `nil` means never auto-nack (#27).
+- `MessageBus#add_channel` logs `added channel :name` after the channel is
+  built, instead of `adding channel :name` before validation, so a rejected
+  `add_channel` no longer logs as if the channel had been added (#47).
 
 ### Changed
 
