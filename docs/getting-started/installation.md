@@ -4,6 +4,7 @@
 
 - Ruby >= 3.2.0
 - [async](https://github.com/socketry/async) ~> 2.0
+- [logger](https://github.com/ruby/logger)
 
 ## Bundler
 
