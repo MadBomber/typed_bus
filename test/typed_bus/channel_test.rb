@@ -213,6 +213,41 @@ class ChannelTest < Minitest::Test
     assert channel.dead_letter_queue.empty?
   end
 
+  def test_clear_wakes_publisher_blocked_on_backpressure
+    channel = make_channel(max_pending: 1, timeout: nil)
+    channel.subscribe { |_d| } # never acks
+
+    second = nil
+    Async do |task|
+      channel.publish("first")
+      publisher = task.async { second = channel.publish("second") } # blocks at capacity
+
+      sleep(0.01)
+      channel.clear!
+      task.with_timeout(1) { publisher.wait }
+    rescue Async::TimeoutError
+      publisher.stop # still blocked: clear! never woke it
+    end
+
+    assert_instance_of TypedBus::DeliveryTracker, second
+  end
+
+  def test_clear_discards_in_flight_deliveries_before_close
+    stats = TypedBus::Stats.new
+    channel = TypedBus::Channel.new(:test, timeout: nil, stats: stats)
+    channel.subscribe { |_d| } # never acks
+
+    Async do
+      3.times { |i| channel.publish(i) }
+      channel.clear!
+      channel.close
+    end
+
+    assert channel.dead_letter_queue.empty?, "close must not dead-letter deliveries clear! discarded"
+    assert_equal 0, stats[:test_dead_lettered]
+    assert_equal 0, stats[:test_nacked]
+  end
+
   # --- Subscriber count ---
 
   def test_subscriber_count
