@@ -363,6 +363,32 @@ class ChannelTest < Minitest::Test
     assert_equal 0, channel.pending_count
   end
 
+  def test_user_tracker_hooks_do_not_replace_channel_bookkeeping
+    stats = TypedBus::Stats.new
+    channel = TypedBus::Channel.new(:test, timeout: nil, max_pending: 1, stats: stats)
+    channel.subscribe { |d| sleep(0.01); d.ack! }
+
+    user_calls = []
+    second = nil
+    Async do |task|
+      tracker = channel.publish(:a)
+      tracker.on_resolved { user_calls << :resolved }
+      tracker.on_complete { user_calls << :complete }
+      sleep(0.05)
+
+      publisher = task.async { second = channel.publish(:b) }
+      task.with_timeout(1) { publisher.wait }
+      sleep(0.05)
+    rescue Async::TimeoutError
+      publisher.stop # still blocked: the slot for :a was never released
+    end
+
+    assert_equal %i[complete resolved], user_calls
+    assert_instance_of TypedBus::DeliveryTracker, second
+    assert_equal 0, channel.pending_count
+    assert_equal 2, stats[:test_delivered]
+  end
+
   def test_nil_throttle_means_off_with_or_without_max_pending
     unbounded = make_channel(throttle: nil)
     bounded   = make_channel(throttle: nil, max_pending: 2)
