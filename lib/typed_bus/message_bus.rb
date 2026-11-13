@@ -19,7 +19,8 @@ module TypedBus
 
     # @param timeout [Numeric, Symbol] delivery ACK deadline (overrides global default)
     # @param max_pending [Integer, nil, Symbol] backpressure limit (overrides global default)
-    # @param throttle [Float, Symbol] default throttle threshold for all channels (overrides global default)
+    # @param throttle [Numeric, nil, Symbol] default throttle threshold for all channels (overrides global default);
+    #   0 or nil = off, else strictly between 0 and 1
     # @raise [ArgumentError] if max_pending or throttle is invalid
     def initialize(timeout: :use_default, max_pending: :use_default, throttle: :use_default)
       global  = TypedBus.configuration
@@ -45,7 +46,8 @@ module TypedBus
     # @param type [Class, Module, nil] optional type constraint
     # @param timeout [Numeric, nil, Symbol] delivery ACK deadline in seconds; nil = never auto-nack
     # @param max_pending [Integer, nil, Symbol] backpressure limit
-    # @param throttle [Float, Symbol] capacity ratio where backoff begins (0.0 = disabled)
+    # @param throttle [Numeric, nil, Symbol] remaining-capacity ratio where backoff begins;
+    #   0 or nil = off, else strictly between 0 and 1
     # @raise [ArgumentError] if type, max_pending, or throttle is invalid
     # @return [Channel]
     def add_channel(name, type: nil, timeout: :use_default, max_pending: :use_default, throttle: :use_default)
@@ -72,6 +74,8 @@ module TypedBus
     # Publish a message to a named channel.
     # @param channel_name [Symbol]
     # @param message [Object]
+    # @return [DeliveryTracker, nil] the tracker, or nil when the channel has
+    #   no subscribers and the message was dead-lettered
     def publish(channel_name, message)
       channel = fetch_channel!(channel_name)
       @stats.increment(:"#{channel_name}_published")

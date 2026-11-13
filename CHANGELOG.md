@@ -12,8 +12,10 @@
   empties the queue first and yields that snapshot once; entries added
   during the drain (such as a retry that fails again) wait for the next
   drain. If the block raises, the entry it was handling and the ones not
-  yet yielded go back to the front of the queue (#6). Found and fixed by
-  BomberBot.
+  yet yielded go back to the front of the queue (#6). If the block exits
+  early with `break` or `return`, the entry it was handling counts as done
+  and the ones not yet yielded go back on the queue; in 0.0.1 they were
+  lost (#29). Found and fixed by BomberBot.
 - Declare `logger` as a runtime dependency in the gemspec so
   `require "typed_bus"` loads under Bundler on Ruby 4.0+, where `logger`
   is a bundled gem rather than a default gem. Found and fixed by BomberBot.
@@ -53,6 +55,9 @@
 - `MessageBus#add_channel` logs `added channel :name` after the channel is
   built, instead of `adding channel :name` before validation, so a rejected
   `add_channel` no longer logs as if the channel had been added (#47).
+- `Channel#publish` and `MessageBus#publish` YARD now document the `nil`
+  return when there are no subscribers, and the `throttle` params list the
+  accepted `Numeric`/`nil` values (#42).
 
 ### Changed
 
@@ -73,6 +78,8 @@
 - `ratatui_ruby` and `aigcm` moved to an optional `:extras` bundle group;
   the default bundle no longer builds a Rust native extension.
 - Refreshed `Gemfile.lock` to async 2.46.0 (#14).
+- Refreshed the development `Gemfile.lock` with a full `bundle update`
+  (minitest 6.1, rake 13.4, simplecov 1.3, rdoc 8.1, prism 2.1) (#41).
 - Removed the no-op `Configuration#initialize_copy` override (#21).
 
 ### Added
@@ -80,7 +87,8 @@
 - MIT `LICENSE` file (#11); `documentation_uri`, `bug_tracker_uri`, and
   `rubygems_mfa_required` gemspec metadata (#12).
 - CI workflow running the test suite on Ruby 3.2-4.0 plus a load smoke test
-  outside the dev bundle (#20); Dependabot configuration (#15).
+  outside the dev bundle (#20); Dependabot configuration (#15), with its
+  update PRs targeting the `develop` branch (#40).
 
 ## [0.0.1] - 2026-02-07
 
