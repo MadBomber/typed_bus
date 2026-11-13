@@ -12,9 +12,11 @@ Creates a new bus. All parameters default to `:use_default`, inheriting from the
 
 | Parameter | Default | Description |
 |-----------|---------|-------------|
-| `timeout` | `:use_default` | Delivery ACK deadline for channels |
+| `timeout` | `:use_default` | Delivery ACK deadline for channels in seconds; `nil` = never auto-nack |
 | `max_pending` | `:use_default` | Backpressure limit for channels |
 | `throttle` | `:use_default` | Throttle threshold for channels |
+
+**Raises:** `ArgumentError` if `max_pending` is not `nil` or a positive `Integer`, or if `throttle` is not `nil`, `0`, or a number strictly between 0 and 1.
 
 ```ruby
 bus = TypedBus::MessageBus.new(timeout: 10, throttle: 0.5)
@@ -39,10 +41,12 @@ Register a named channel. Parameters default to `:use_default`, inheriting from 
 | Parameter | Default | Description |
 |-----------|---------|-------------|
 | `name` | required | `Symbol` channel name |
-| `type` | `nil` | Optional type constraint |
-| `timeout` | `:use_default` | Delivery ACK deadline in seconds |
+| `type` | `nil` | Optional `Class` or `Module` constraint for messages |
+| `timeout` | `:use_default` | Delivery ACK deadline in seconds; `nil` = never auto-nack |
 | `max_pending` | `:use_default` | Backpressure limit |
 | `throttle` | `:use_default` | Throttle threshold |
+
+**Raises:** `ArgumentError` if `type` is not `nil`, a `Class`, or a `Module`; if `max_pending` or `throttle` is invalid; or if the effective `throttle` is on without a `max_pending`. A rejected channel is not registered.
 
 ### `remove_channel(name)`
 
