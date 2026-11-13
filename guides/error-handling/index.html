@@ -1935,11 +1935,14 @@
 <h2 id="unknown-channels">Unknown Channels<a class="headerlink" href="#unknown-channels" title="Permanent link">&para;</a></h2>
 <p>All MessageBus methods that take a channel name raise <code>ArgumentError</code> for unknown channels:</p>
 <div class="language-ruby highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="n">bus</span><span class="o">.</span><span class="n">publish</span><span class="p">(</span><span class="ss">:nonexistent</span><span class="p">,</span><span class="w"> </span><span class="s2">"msg"</span><span class="p">)</span>
-</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="c1"># =&gt; ArgumentError: Unknown channel: nonexistent</span>
+</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="c1"># =&gt; ArgumentError: Unknown channel: :nonexistent (registered: :orders)</span>
 </span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>
-</span><span id="__span-2-4"><a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="n">bus</span><span class="o">.</span><span class="n">subscribe</span><span class="p">(</span><span class="ss">:nonexistent</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="o">|</span><span class="n">d</span><span class="o">|</span><span class="w"> </span><span class="n">d</span><span class="o">.</span><span class="n">ack!</span><span class="w"> </span><span class="p">}</span>
-</span><span id="__span-2-5"><a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="c1"># =&gt; ArgumentError: Unknown channel: nonexistent</span>
+</span><span id="__span-2-4"><a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="n">bus</span><span class="o">.</span><span class="n">subscribe</span><span class="p">(</span><span class="s2">"orders"</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="o">|</span><span class="n">d</span><span class="o">|</span><span class="w"> </span><span class="n">d</span><span class="o">.</span><span class="n">ack!</span><span class="w"> </span><span class="p">}</span>
+</span><span id="__span-2-5"><a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="c1"># =&gt; ArgumentError: Unknown channel: "orders" (registered: :orders)</span>
 </span></code></pre></div>
+<p>The message shows the name you passed with <code>inspect</code> and lists the registered
+channel names, so a String/Symbol mix-up (<code>"orders"</code> vs <code>:orders</code>) is easy to
+spot. A bus with no channels says <code>(no channels registered)</code>.</p>
 <p><code>remove_channel</code> is the exception — it's a no-op for unknown channels.</p>
 <h2 id="publishing-to-a-closed-channel">Publishing to a Closed Channel<a class="headerlink" href="#publishing-to-a-closed-channel" title="Permanent link">&para;</a></h2>
 <div class="language-ruby highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="n">bus</span><span class="o">.</span><span class="n">close</span><span class="p">(</span><span class="ss">:orders</span><span class="p">)</span>
