@@ -98,6 +98,15 @@ module TypedBus
         )
 
         @active_deliveries << delivery
+
+        # An earlier handler may have closed the channel mid-fan-out. close
+        # only force-nacks deliveries that already exist, so dead-letter
+        # this one the same way instead of dispatching it.
+        if @closed
+          delivery.nack!
+          next
+        end
+
         log(:debug, "notifying subscriber ##{sub_id} (message=#{message.class})")
 
         Async do

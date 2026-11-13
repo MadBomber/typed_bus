@@ -328,6 +328,25 @@ class ChannelTest < Minitest::Test
     assert_equal 0, channel.pending_count
   end
 
+  def test_close_from_handler_dead_letters_remaining_fanout_deliveries
+    channel = make_channel(timeout: nil)
+    late = []
+    channel.subscribe { |_d| channel.close } # e.g. a shutdown handler
+    channel.subscribe { |d| late << d }      # never acks
+
+    tracker = nil
+    Async do
+      tracker = channel.publish(:msg)
+      sleep(0.01)
+    end
+
+    assert channel.closed?
+    assert_equal 0, channel.pending_count
+    assert_equal 0, tracker.pending_count
+    assert_equal 2, channel.dead_letter_queue.size
+    assert_empty late, "no delivery should be dispatched after close"
+  end
+
   # --- Attr readers ---
 
   def test_name_attr_reader
