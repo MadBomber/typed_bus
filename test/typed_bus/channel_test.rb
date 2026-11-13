@@ -363,6 +363,37 @@ class ChannelTest < Minitest::Test
     assert_equal 0, channel.pending_count
   end
 
+  def test_close_wakes_blocked_publisher_when_dead_letter_callback_raises
+    channel = make_channel(max_pending: 1, timeout: nil)
+    channel.subscribe { |_d| } # never acks
+    channel.subscribe { |_d| } # never acks
+    channel.dead_letter_queue.on_dead_letter { |_| raise "boom" }
+
+    close_error = nil
+    publish_error = nil
+    Async do |task|
+      channel.publish("first")
+      publisher = task.async do
+        channel.publish("second") # blocks at capacity
+      rescue RuntimeError => e
+        publish_error = e
+      end
+
+      sleep(0.01)
+      begin
+        channel.close
+      rescue RuntimeError => e
+        close_error = e
+      end
+      task.with_timeout(1) { publisher.wait }
+    rescue Async::TimeoutError
+      publisher.stop # still blocked: the close never woke it
+    end
+
+    assert_equal "boom", close_error&.message
+    assert_match(/Channel :test is closed/, publish_error&.message)
+  end
+
   def test_nil_throttle_means_off_with_or_without_max_pending
     unbounded = make_channel(throttle: nil)
     bounded   = make_channel(throttle: nil, max_pending: 2)

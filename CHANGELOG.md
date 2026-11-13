@@ -55,6 +55,10 @@
 - `MessageBus#add_channel` logs `added channel :name` after the channel is
   built, instead of `adding channel :name` before validation, so a rejected
   `add_channel` no longer logs as if the channel had been added (#47).
+- `Channel#close` now always wakes publishers waiting for capacity, so they
+  raise the closed error even when an `on_dead_letter` callback raises during
+  the force-nack. Previously such a publisher stayed blocked forever with
+  `timeout: nil` (#43).
 - `Channel#publish` and `MessageBus#publish` YARD now document the `nil`
   return when there are no subscribers, and the `throttle` params list the
   accepted `Numeric`/`nil` values (#42).
