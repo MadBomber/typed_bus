@@ -1,6 +1,6 @@
 # Backpressure
 
-Set `max_pending` to bound how many unresolved deliveries a channel allows. When the limit is reached, `publish` blocks the calling fiber until subscribers ACK and free capacity.
+Set `max_pending` to bound how many unresolved deliveries a channel allows. When the limit is reached, `publish` blocks the calling fiber until a delivery resolves and frees capacity. Any resolution counts: ack, nack, timeout, `close`, or `clear!`. If the channel is closed while a publisher waits, that publisher raises `Channel :name is closed`.
 
 ## Enabling Backpressure
 

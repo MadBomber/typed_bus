@@ -17,7 +17,8 @@ module TypedBus
     # @param timeout [Numeric, nil] seconds before delivery auto-nacks (default: 30); nil = never auto-nack
     # @param max_pending [Integer, nil] backpressure limit; a positive Integer or nil (unbounded)
     # @param stats [Stats, nil] optional stats tracker for counters
-    # @param throttle [Float] capacity ratio (0.0..1.0) at which asymptotic backoff begins (0.0 = disabled)
+    # @param throttle [Numeric, nil] remaining-capacity ratio at which asymptotic backoff begins;
+    #   0 or nil = off, else strictly between 0 and 1
     # @raise [ArgumentError] if type, max_pending, or throttle is invalid
     def initialize(name, type: nil, timeout: 30, max_pending: nil, stats: nil, throttle: 0.0)
       @name              = name
@@ -49,7 +50,8 @@ module TypedBus
     # @raise [ArgumentError] if message doesn't match type constraint
     # @raise [RuntimeError] if channel is closed, including while the
     #   publisher was waiting on throttle or backpressure
-    # @return [DeliveryTracker] the tracker for this message
+    # @return [DeliveryTracker, nil] the tracker, or nil when there are no
+    #   subscribers and the message was dead-lettered
     def publish(message)
       ensure_open!
 

@@ -90,10 +90,11 @@ class MessageBusTest < Minitest::Test
   end
 
   def test_remove_channel_closes_and_removes
-    @bus.add_channel(:temp)
+    channel = @bus.add_channel(:temp)
     @bus.remove_channel(:temp)
 
     refute @bus.channel?(:temp)
+    assert channel.closed?
   end
 
   def test_clear_resets_channels_and_stats
@@ -112,6 +113,21 @@ class MessageBusTest < Minitest::Test
 
     dlq = @bus.dead_letters(:q)
     assert_equal 1, dlq.size
+  end
+
+  def test_publish_returns_tracker_or_nil_without_subscribers
+    @bus.add_channel(:empty)
+    @bus.add_channel(:busy, timeout: 1)
+    @bus.subscribe(:busy) { |d| d.ack! }
+
+    results = {}
+    Async do
+      results[:empty] = @bus.publish(:empty, "orphan")
+      results[:busy]  = @bus.publish(:busy, "msg")
+    end
+
+    assert_nil results[:empty]
+    assert_instance_of TypedBus::DeliveryTracker, results[:busy]
   end
 
   def test_close_channel
