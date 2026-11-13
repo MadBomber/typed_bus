@@ -363,6 +363,28 @@ class ChannelTest < Minitest::Test
     assert_equal 0, channel.pending_count
   end
 
+  def test_nil_throttle_means_off_with_or_without_max_pending
+    unbounded = make_channel(throttle: nil)
+    bounded   = make_channel(throttle: nil, max_pending: 2)
+    received = []
+    [unbounded, bounded].each { |ch| ch.subscribe { |d| received << d.message; d.ack! } }
+
+    Async do
+      unbounded.publish("u")
+      bounded.publish("b")
+    end
+
+    assert_equal %w[u b], received
+  end
+
+  def test_closed_typed_channel_raises_closed_before_type_check
+    channel = make_channel(type: String)
+    channel.close
+
+    error = assert_raises(RuntimeError) { channel.publish(42) }
+    assert_match(/Channel :test is closed/, error.message)
+  end
+
   # --- Attr readers ---
 
   def test_name_attr_reader
