@@ -50,6 +50,9 @@
   publish to a bounded channel (#31).
 - `timeout: nil` now logs as `timeout=none` instead of `timeout=s`, and the
   option tables document that `nil` means never auto-nack (#27).
+- Closing a channel from a subscriber handler while `publish` is still fanning
+  out no longer leaves the remaining subscribers' deliveries pending. They are
+  nacked into the dead letter queue instead of being dispatched (#48).
 
 ### Changed
 
