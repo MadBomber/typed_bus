@@ -90,10 +90,11 @@ class MessageBusTest < Minitest::Test
   end
 
   def test_remove_channel_closes_and_removes
-    @bus.add_channel(:temp)
+    channel = @bus.add_channel(:temp)
     @bus.remove_channel(:temp)
 
     refute @bus.channel?(:temp)
+    assert channel.closed?
   end
 
   def test_clear_resets_channels_and_stats
