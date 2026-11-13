@@ -156,9 +156,18 @@ module TypedBus
 
     def fetch_channel!(name)
       channel = @channels[name]
-      raise ArgumentError, "Unknown channel: #{name}" unless channel
+      raise ArgumentError, unknown_channel_message(name) unless channel
 
       channel
+    end
+
+    def unknown_channel_message(name)
+      known = if @channels.empty?
+                "no channels registered"
+              else
+                "registered: #{@channels.keys.map(&:inspect).join(", ")}"
+              end
+      "Unknown channel: #{name.inspect} (#{known})"
     end
 
     def log(level, message)

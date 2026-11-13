@@ -36,6 +36,19 @@ class MessageBusTest < Minitest::Test
     assert_match(/Unknown channel/, error.message)
   end
 
+  def test_unknown_channel_error_shows_name_and_registered_channels
+    @bus.add_channel(:orders)
+    @bus.add_channel(:payments)
+
+    error = assert_raises(ArgumentError) { @bus.publish("orders", "x") }
+    assert_equal 'Unknown channel: "orders" (registered: :orders, :payments)', error.message
+  end
+
+  def test_unknown_channel_error_on_empty_bus
+    error = assert_raises(ArgumentError) { @bus.publish(:orders, "x") }
+    assert_equal "Unknown channel: :orders (no channels registered)", error.message
+  end
+
   def test_publish_tracks_stats_per_channel
     @bus.add_channel(:events, timeout: 1)
     @bus.subscribe(:events) { |d| d.ack! }

@@ -34,11 +34,15 @@ All MessageBus methods that take a channel name raise `ArgumentError` for unknow
 
 ```ruby
 bus.publish(:nonexistent, "msg")
-# => ArgumentError: Unknown channel: nonexistent
+# => ArgumentError: Unknown channel: :nonexistent (registered: :orders)
 
-bus.subscribe(:nonexistent) { |d| d.ack! }
-# => ArgumentError: Unknown channel: nonexistent
+bus.subscribe("orders") { |d| d.ack! }
+# => ArgumentError: Unknown channel: "orders" (registered: :orders)
 ```
+
+The message shows the name you passed with `inspect` and lists the registered
+channel names, so a String/Symbol mix-up (`"orders"` vs `:orders`) is easy to
+spot. A bus with no channels says `(no channels registered)`.
 
 `remove_channel` is the exception — it's a no-op for unknown channels.
 
