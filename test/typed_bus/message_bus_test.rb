@@ -356,7 +356,7 @@ class MessageBusTest < Minitest::Test
     Async { bus.publish(:logged, "msg") }
 
     assert_match(/message bus initialized/, log_output.string)
-    assert_match(/adding channel/, log_output.string)
+    assert_match(/added channel :logged/, log_output.string)
   ensure
     TypedBus.logger = original
   end
@@ -390,13 +390,26 @@ class MessageBusTest < Minitest::Test
     refute @bus.channel?(:bad)
   end
 
+  def test_rejected_add_channel_logs_no_added_line
+    original = TypedBus.logger
+    output = StringIO.new
+    TypedBus.logger = Logger.new(output)
+
+    assert_raises(ArgumentError) { @bus.add_channel(:bad, type: "Order") }
+
+    refute_match(/add(ed|ing) channel :bad/, output.string)
+    refute @bus.channel?(:bad)
+  ensure
+    TypedBus.logger = original
+  end
+
   def test_add_channel_logs_nil_timeout_as_none
     original = TypedBus.logger
     output = StringIO.new
     TypedBus.logger = Logger.new(output)
     @bus.add_channel(:forever, timeout: nil)
 
-    assert_includes output.string, "adding channel :forever (type=any, timeout=none,"
+    assert_includes output.string, "added channel :forever (type=any, timeout=none,"
   ensure
     TypedBus.logger = original
   end
