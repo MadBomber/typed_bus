@@ -50,7 +50,8 @@ end
 
 - Ruby >= 3.2.0
 - [async](https://github.com/socketry/async) ~> 2.0
+- [logger](https://github.com/ruby/logger)
 
 ## License
 
-MIT
+[MIT](https://github.com/MadBomber/typed_bus/blob/develop/LICENSE)

@@ -3,7 +3,7 @@ site_name: TypedBus
 site_description: Async pub/sub message bus with typed channels, ACK-based delivery, and dead letter queues for Ruby
 site_author: Dewayne VanHoozer
 site_url: https://madbomber.github.io/typed_bus
-copyright: Copyright &copy; 2025 Dewayne VanHoozer
+copyright: Copyright &copy; 2026 Dewayne VanHoozer
 
 # Repository information
 repo_name: MadBomber/typed_bus
