@@ -70,6 +70,8 @@
 - `ratatui_ruby` and `aigcm` moved to an optional `:extras` bundle group;
   the default bundle no longer builds a Rust native extension.
 - Refreshed `Gemfile.lock` to async 2.46.0 (#14).
+- Refreshed the development `Gemfile.lock` with a full `bundle update`
+  (minitest 6.1, rake 13.4, simplecov 1.3, rdoc 8.1, prism 2.1) (#41).
 - Removed the no-op `Configuration#initialize_copy` override (#21).
 
 ### Added
