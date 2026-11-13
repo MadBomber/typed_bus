@@ -1914,9 +1914,10 @@
 <p>All log messages are prefixed with the originating component:</p>
 <div class="language-text highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>TypedBus::MessageBus message bus initialized (default_throttle=off)
 </span><span id="__span-3-2"><a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>TypedBus::Channel[:orders] channel created (type=Order, timeout=10s, max_pending=100, throttle=off)
-</span><span id="__span-3-3"><a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>TypedBus::Channel[:orders] published message (type=Order, subscribers=2)
-</span><span id="__span-3-4"><a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a>TypedBus::Delivery[:orders#1] acked
-</span><span id="__span-3-5"><a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a>TypedBus::DeliveryTracker[:orders] fully delivered (all 2 subscribers acked)
+</span><span id="__span-3-3"><a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>TypedBus::MessageBus added channel :orders (type=Order, timeout=10s, max_pending=100)
+</span><span id="__span-3-4"><a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a>TypedBus::Channel[:orders] published message (type=Order, subscribers=2)
+</span><span id="__span-3-5"><a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a>TypedBus::Delivery[:orders#1] acked
+</span><span id="__span-3-6"><a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a>TypedBus::DeliveryTracker[:orders] fully delivered (all 2 subscribers acked)
 </span></code></pre></div>
 <h2 id="custom-formatter">Custom Formatter<a class="headerlink" href="#custom-formatter" title="Permanent link">&para;</a></h2>
 <p>Use a custom formatter for colorized or structured output:</p>
