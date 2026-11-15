@@ -156,9 +156,9 @@ class ChannelThrottleTest < Minitest::Test
 
   def test_throttle_delay_measurably_slows_publishes
     channel = TypedBus::Channel.new(:test,
-      max_pending: 5,
+      max_pending: 20,
       timeout: 5,
-      throttle: 0.9  # starts throttling at 90% remaining (i.e., almost immediately)
+      throttle: 0.95 # starts throttling at 95% remaining (i.e., from the second publish)
     )
     deliveries = []
     channel.subscribe { |d| deliveries << d }
