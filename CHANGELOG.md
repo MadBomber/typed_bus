@@ -66,6 +66,9 @@
 - `Channel#publish` and `MessageBus#publish` YARD now document the `nil`
   return when there are no subscribers, and the `throttle` params list the
   accepted `Numeric`/`nil` values (#42).
+- Closing a channel from a subscriber handler while `publish` is still fanning
+  out no longer leaves the remaining subscribers' deliveries pending. They are
+  nacked into the dead letter queue instead of being dispatched (#48).
 
 ### Changed
 
