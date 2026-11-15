@@ -78,7 +78,8 @@ module TypedBus
     #   no subscribers and the message was dead-lettered
     def publish(channel_name, message)
       channel = fetch_channel!(channel_name)
-      @stats.increment(:"#{channel_name}_published")
+      # Count before fan-out: subscribers and DLQ callbacks may read the counter.
+      @stats.increment(:"#{channel_name}_published") if accepts?(channel, message)
       channel.publish(message)
     end
 
@@ -164,6 +165,12 @@ module TypedBus
       raise ArgumentError, unknown_channel_message(name) unless channel
 
       channel
+    end
+
+    # Mirrors the up-front checks Channel#publish raises on. A channel that
+    # closes while the publisher waits on throttle or backpressure is not caught.
+    def accepts?(channel, message)
+      !channel.closed? && (channel.type.nil? || message.is_a?(channel.type))
     end
 
     def unknown_channel_message(name)
