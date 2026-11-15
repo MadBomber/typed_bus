@@ -106,7 +106,7 @@ class MemorySampler
     "Tracker"  => TypedBus::DeliveryTracker,
   }.freeze
 
-  attr_reader :rss_kb, :rss_history, :baseline_rss_kb,
+  attr_reader :rss_history,
               :heap_live, :total_allocated, :total_freed,
               :gc_count, :gc_major_count,
               :object_counts, :object_deltas
