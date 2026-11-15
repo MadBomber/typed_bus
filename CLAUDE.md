@@ -46,7 +46,7 @@ MessageBus (registry facade, shared Stats)
 - Subscribers must explicitly `ack!` or `nack!` each Delivery; unresolved deliveries auto-nack after timeout
 - Messages published with no subscribers go directly to the DLQ
 - Backpressure (`max_pending`) blocks the publishing fiber via `Async::Condition`
-- Adaptive throttle (`throttle: Float`) applies asymptotic delay as capacity fills
+- Adaptive throttle (`throttle:`, a ratio strictly between 0 and 1; `0` or `nil` = off) applies asymptotic delay as capacity fills
 - Stats are per-channel counters: `#{channel_name}_published`, `_delivered`, `_nacked`, `_timed_out`, `_dead_lettered`, `_throttled`
 - All logging is optional via `TypedBus.logger` (standard Ruby Logger)
 

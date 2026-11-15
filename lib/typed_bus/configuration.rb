@@ -26,7 +26,11 @@ module TypedBus
 
     # @return [Numeric, nil] delivery ACK deadline in seconds; nil = never auto-nack
     attr_accessor :timeout
-    attr_reader :max_pending, :throttle, :logger, :log_level
+    # @return [Integer, nil] backpressure limit; nil = unbounded
+    attr_reader :max_pending
+    # @return [Numeric, nil] remaining-capacity ratio where backoff begins; 0 or nil = off
+    attr_reader :throttle
+    attr_reader :logger, :log_level
 
     # Ensure a backpressure limit is usable: +nil+ (unbounded) or a
     # positive Integer. Zero and negative limits can never accept a publish.
@@ -94,9 +98,9 @@ module TypedBus
     # Merge overrides on top of this configuration's values.
     # Parameters set to +:use_default+ inherit from this config.
     #
-    # @param timeout [Numeric, Symbol] delivery ACK deadline
+    # @param timeout [Numeric, nil, Symbol] delivery ACK deadline
     # @param max_pending [Integer, nil, Symbol] backpressure limit
-    # @param throttle [Float, Symbol] capacity ratio for adaptive backoff
+    # @param throttle [Numeric, nil, Symbol] capacity ratio for adaptive backoff
     # @return [Hash] resolved values
     def resolve(timeout: :use_default, max_pending: :use_default, throttle: :use_default)
       {
