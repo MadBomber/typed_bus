@@ -330,7 +330,7 @@ bus.add_channel(:logs, throttle: 0.0)
 ```ruby
 bus.stats[:orders_published]     # messages published
 bus.stats[:orders_delivered]     # all subscribers acked
-bus.stats[:orders_nacked]        # explicit nacks
+bus.stats[:orders_nacked]        # nacks: nack!, raising handler, close, or no subscribers
 bus.stats[:orders_timed_out]     # delivery timeouts
 bus.stats[:orders_dead_lettered] # entries added to DLQ
 bus.stats[:orders_throttled]     # publishes that were rate-limited
@@ -338,6 +338,10 @@ bus.stats[:orders_throttled]     # publishes that were rate-limited
 bus.stats.to_h                   # snapshot of all counters
 bus.stats.reset!                 # zero all counters
 ```
+
+`published` and `delivered` count once per message. `nacked`, `timed_out` and
+`dead_lettered` count once per subscriber delivery, so one publish to a channel
+with three subscribers can add up to 3 to each of them.
 
 When using `Channel` directly, pass a `Stats` instance:
 
