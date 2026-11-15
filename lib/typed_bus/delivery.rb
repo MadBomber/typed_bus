@@ -12,7 +12,7 @@ module TypedBus
     # @param message [Object] the published payload
     # @param channel_name [Symbol] originating channel
     # @param subscriber_id [Integer] identity of the target subscriber
-    # @param timeout [Numeric] seconds before auto-nack (nil = no timeout)
+    # @param timeout [Numeric, nil] seconds before auto-nack (nil = no timeout)
     # @param on_ack [Proc, nil] called with subscriber_id on ack
     # @param on_nack [Proc, nil] called with subscriber_id on nack
     def initialize(message, channel_name:, subscriber_id:, timeout: nil, on_ack: nil, on_nack: nil)

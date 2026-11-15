@@ -17,7 +17,7 @@ module TypedBus
   class MessageBus
     attr_reader :stats, :config
 
-    # @param timeout [Numeric, Symbol] delivery ACK deadline (overrides global default)
+    # @param timeout [Numeric, nil, Symbol] delivery ACK deadline (overrides global default)
     # @param max_pending [Integer, nil, Symbol] backpressure limit (overrides global default)
     # @param throttle [Numeric, nil, Symbol] default throttle threshold for all channels (overrides global default);
     #   0 or nil = off, else strictly between 0 and 1

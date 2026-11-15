@@ -68,9 +68,9 @@ channel = TypedBus::Channel.new(:orders, timeout: 10)
 | Option | Type | Default | Description |
 |--------|------|---------|-------------|
 | `type` | `Class` or `Module` | `nil` | Restricts published messages to a specific class or module |
-| `timeout` | `Numeric` | `30` | Seconds before unresolved deliveries auto-nack; `nil` = never auto-nack |
-| `max_pending` | `Integer` | `nil` | Backpressure limit (positive `Integer`); `nil` = unbounded |
-| `throttle` | `Numeric` | `0.0` | Remaining-capacity ratio where backoff begins; `0` or `nil` = off, else strictly between `0` and `1`; requires `max_pending` |
+| `timeout` | `Numeric`, `nil` | `30` | Seconds before unresolved deliveries auto-nack; `nil` = never auto-nack |
+| `max_pending` | `Integer`, `nil` | `nil` | Backpressure limit (positive `Integer`); `nil` = unbounded |
+| `throttle` | `Numeric`, `nil` | `0.0` | Remaining-capacity ratio where backoff begins; `0` or `nil` = off, else strictly between `0` and `1`; requires `max_pending` |
 
 ### Typed Channels
 
