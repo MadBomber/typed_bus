@@ -135,6 +135,7 @@ class MessageBusTest < Minitest::Test
     @bus.close(:q)
 
     assert_raises(RuntimeError) { @bus.publish(:q, "nope") }
+    assert_equal 0, @bus.stats[:q_published]
   end
 
   def test_close_all
@@ -144,6 +145,8 @@ class MessageBusTest < Minitest::Test
 
     assert_raises(RuntimeError) { @bus.publish(:a, "nope") }
     assert_raises(RuntimeError) { @bus.publish(:b, "nope") }
+    assert_equal 0, @bus.stats[:a_published]
+    assert_equal 0, @bus.stats[:b_published]
   end
 
   def test_pending_count
@@ -198,6 +201,16 @@ class MessageBusTest < Minitest::Test
 
     assert_equal 1, @bus.stats[:q_nacked]
     assert_equal 1, @bus.stats[:q_dead_lettered]
+  end
+
+  def test_stats_published_counted_before_dead_letter_callback_runs
+    @bus.add_channel(:q, timeout: 1)
+    seen = nil
+    @bus.dead_letters(:q).on_dead_letter { |_d| seen = @bus.stats[:q_published] }
+
+    Async { @bus.publish(:q, "orphan") } # no subscribers
+
+    assert_equal 1, seen
   end
 
   # --- Default throttle ---
@@ -350,6 +363,7 @@ class MessageBusTest < Minitest::Test
 
     error = assert_raises(ArgumentError) { @bus.publish(:typed, 42) }
     assert_match(/Expected String/, error.message)
+    assert_equal 0, @bus.stats[:typed_published]
   end
 
   def test_logging_when_logger_set

@@ -2,6 +2,10 @@
 
 ### Fixed
 
+- `MessageBus#publish` no longer counts a message in `<channel>_published`
+  when the channel is already closed or the message has the wrong type.
+  Those publishes raise and were still counted, which inflated the counter
+  and skewed rates computed from it.
 - `Channel#subscribe` and `MessageBus#subscribe` now raise `ArgumentError`
   when called without a block. Previously a blockless subscriber was
   registered with a nil handler, so every published message waited on an
