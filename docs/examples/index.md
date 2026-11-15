@@ -24,7 +24,7 @@ bundle exec ruby examples/01_basic_usage.rb
 | 11 | `11_logging_basic.rb` | Structured logging via `TypedBus.logger`. Lifecycle log output for channel creation, subscriber registration, publish, delivery, ack, tracker resolution. |
 | 12 | `12_logging_failures.rb` | Failure-path logging: explicit nacks, delivery timeouts, no-subscriber dead-lettering, DLQ drain. Colorized output. |
 | 13 | `13_logging_backpressure.rb` | Backpressure logging. DEBUG-level messages as the publisher fiber blocks and resumes while a slow subscriber drains a bounded channel. |
-| 14 | `14_adaptive_throttling.rb` | Adaptive rate limiting with `throttle: Float`. Asymptotic backoff as a bounded channel fills, bus-level throttle defaults with per-channel overrides. |
+| 14 | `14_adaptive_throttling.rb` | Adaptive rate limiting with `throttle:`. Asymptotic backoff as a bounded channel fills, bus-level throttle defaults with per-channel overrides. |
 | 15 | `15_performance.rb` | Live terminal dashboard (throughput, RSS, GC) over several independent buses with immediate acks. Needs the optional `ratatui_ruby` gem: `bundle config set --local with extras && bundle install`, then `bundle exec ruby examples/15_performance.rb`. Writes `perf_metrics.csv`. |
 
 ## Running All Examples

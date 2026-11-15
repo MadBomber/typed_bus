@@ -17,7 +17,7 @@ module TypedBus
   class MessageBus
     attr_reader :stats, :config
 
-    # @param timeout [Numeric, Symbol] delivery ACK deadline (overrides global default)
+    # @param timeout [Numeric, nil, Symbol] delivery ACK deadline (overrides global default)
     # @param max_pending [Integer, nil, Symbol] backpressure limit (overrides global default)
     # @param throttle [Numeric, nil, Symbol] default throttle threshold for all channels (overrides global default);
     #   0 or nil = off, else strictly between 0 and 1
@@ -56,8 +56,9 @@ module TypedBus
       effective_max_pending = resolved[:max_pending]
       effective_throttle    = resolved[:throttle]
 
-      log(:info, "adding channel :#{name} (type=#{type || 'any'}, timeout=#{effective_timeout ? "#{effective_timeout}s" : 'none'}, max_pending=#{effective_max_pending || 'unbounded'})")
       channel = Channel.new(name, type: type, timeout: effective_timeout, max_pending: effective_max_pending, stats: @stats, throttle: effective_throttle)
+      # Logged only after Channel.new has validated the arguments, so a rejected add logs nothing here.
+      log(:info, "added channel :#{name} (type=#{type || 'any'}, timeout=#{effective_timeout ? "#{effective_timeout}s" : 'none'}, max_pending=#{effective_max_pending || 'unbounded'})")
       @channels[name] = channel
       channel
     end
@@ -77,7 +78,8 @@ module TypedBus
     #   no subscribers and the message was dead-lettered
     def publish(channel_name, message)
       channel = fetch_channel!(channel_name)
-      @stats.increment(:"#{channel_name}_published")
+      # Count before fan-out: subscribers and DLQ callbacks may read the counter.
+      @stats.increment(:"#{channel_name}_published") if accepts?(channel, message)
       channel.publish(message)
     end
 
@@ -163,6 +165,12 @@ module TypedBus
       raise ArgumentError, unknown_channel_message(name) unless channel
 
       channel
+    end
+
+    # Mirrors the up-front checks Channel#publish raises on. A channel that
+    # closes while the publisher waits on throttle or backpressure is not caught.
+    def accepts?(channel, message)
+      !channel.closed? && (channel.type.nil? || message.is_a?(channel.type))
     end
 
     def unknown_channel_message(name)

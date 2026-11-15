@@ -14,7 +14,7 @@ channel = TypedBus::Channel.new(:pipeline,
 )
 ```
 
-The `throttle` value is a `Float` between `0.0` (exclusive) and `1.0` (exclusive), representing the remaining-capacity ratio at which backoff begins.
+The `throttle` value is a number strictly between `0` and `1`, representing the remaining-capacity ratio at which backoff begins. `0` (the default) or `nil` turns throttling off.
 
 ## Backoff Curve
 

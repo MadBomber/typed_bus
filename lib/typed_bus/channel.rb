@@ -100,6 +100,15 @@ module TypedBus
         )
 
         @active_deliveries << delivery
+
+        # An earlier handler may have closed the channel mid-fan-out. close
+        # only force-nacks deliveries that already exist, so dead-letter
+        # this one the same way instead of dispatching it.
+        if @closed
+          delivery.nack!
+          next
+        end
+
         log(:debug, "notifying subscriber ##{sub_id} (message=#{message.class})")
 
         Async do
@@ -161,6 +170,8 @@ module TypedBus
 
     # Close the channel. Stops accepting new publishes/subscribes.
     # Pending deliveries are force-nacked (routed to DLQ with stats).
+    # Publishers waiting for capacity are always woken and raise the
+    # closed error, even if an on_dead_letter callback raises here.
     def close
       return if @closed
 
@@ -168,6 +179,7 @@ module TypedBus
       pending = @active_deliveries.count(&:pending?)
       log(:info, "closing (force-nacking #{pending} pending deliveries)")
       force_nack_pending
+    ensure
       @backpressure.signal
     end
 

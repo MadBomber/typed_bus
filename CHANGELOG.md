@@ -2,6 +2,10 @@
 
 ### Fixed
 
+- `MessageBus#publish` no longer counts a message in `<channel>_published`
+  when the channel is already closed or the message has the wrong type.
+  Those publishes raise and were still counted, which inflated the counter
+  and skewed rates computed from it.
 - `Channel#subscribe` and `MessageBus#subscribe` now raise `ArgumentError`
   when called without a block. Previously a blockless subscriber was
   registered with a nil handler, so every published message waited on an
@@ -52,6 +56,13 @@
   publish to a bounded channel (#31).
 - `timeout: nil` now logs as `timeout=none` instead of `timeout=s`, and the
   option tables document that `nil` means never auto-nack (#27).
+- `MessageBus#add_channel` logs `added channel :name` after the channel is
+  built, instead of `adding channel :name` before validation, so a rejected
+  `add_channel` no longer logs as if the channel had been added (#47).
+- `Channel#close` now always wakes publishers waiting for capacity, so they
+  raise the closed error even when an `on_dead_letter` callback raises during
+  the force-nack. Previously such a publisher stayed blocked forever with
+  `timeout: nil` (#43).
 - `DeliveryTracker#on_complete`, `#on_resolved` and `#on_dead_letter` now add
   a callback instead of replacing the previous one. Hooking the tracker that
   `publish` returns no longer replaces the channel's own bookkeeping, which left
@@ -60,6 +71,9 @@
 - `Channel#publish` and `MessageBus#publish` YARD now document the `nil`
   return when there are no subscribers, and the `throttle` params list the
   accepted `Numeric`/`nil` values (#42).
+- Closing a channel from a subscriber handler while `publish` is still fanning
+  out no longer leaves the remaining subscribers' deliveries pending. They are
+  nacked into the dead letter queue instead of being dispatched (#48).
 
 ### Changed
 

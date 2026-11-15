@@ -135,6 +135,7 @@ class MessageBusTest < Minitest::Test
     @bus.close(:q)
 
     assert_raises(RuntimeError) { @bus.publish(:q, "nope") }
+    assert_equal 0, @bus.stats[:q_published]
   end
 
   def test_close_all
@@ -144,6 +145,8 @@ class MessageBusTest < Minitest::Test
 
     assert_raises(RuntimeError) { @bus.publish(:a, "nope") }
     assert_raises(RuntimeError) { @bus.publish(:b, "nope") }
+    assert_equal 0, @bus.stats[:a_published]
+    assert_equal 0, @bus.stats[:b_published]
   end
 
   def test_pending_count
@@ -198,6 +201,16 @@ class MessageBusTest < Minitest::Test
 
     assert_equal 1, @bus.stats[:q_nacked]
     assert_equal 1, @bus.stats[:q_dead_lettered]
+  end
+
+  def test_stats_published_counted_before_dead_letter_callback_runs
+    @bus.add_channel(:q, timeout: 1)
+    seen = nil
+    @bus.dead_letters(:q).on_dead_letter { |_d| seen = @bus.stats[:q_published] }
+
+    Async { @bus.publish(:q, "orphan") } # no subscribers
+
+    assert_equal 1, seen
   end
 
   # --- Default throttle ---
@@ -315,7 +328,14 @@ class MessageBusTest < Minitest::Test
 
   def test_close_all_on_empty_bus
     bus = TypedBus::MessageBus.new
-    bus.close_all  # should not raise
+    bus.close_all
+
+    bus.add_channel(:later)
+    received = []
+    bus.subscribe(:later) { |d| received << d.message; d.ack! }
+    Async { bus.publish(:later, "still open") }
+
+    assert_equal ["still open"], received
   end
 
   # --- clear on empty bus ---
@@ -343,6 +363,7 @@ class MessageBusTest < Minitest::Test
 
     error = assert_raises(ArgumentError) { @bus.publish(:typed, 42) }
     assert_match(/Expected String/, error.message)
+    assert_equal 0, @bus.stats[:typed_published]
   end
 
   def test_logging_when_logger_set
@@ -356,7 +377,7 @@ class MessageBusTest < Minitest::Test
     Async { bus.publish(:logged, "msg") }
 
     assert_match(/message bus initialized/, log_output.string)
-    assert_match(/adding channel/, log_output.string)
+    assert_match(/added channel :logged/, log_output.string)
   ensure
     TypedBus.logger = original
   end
@@ -390,13 +411,26 @@ class MessageBusTest < Minitest::Test
     refute @bus.channel?(:bad)
   end
 
+  def test_rejected_add_channel_logs_no_added_line
+    original = TypedBus.logger
+    output = StringIO.new
+    TypedBus.logger = Logger.new(output)
+
+    assert_raises(ArgumentError) { @bus.add_channel(:bad, type: "Order") }
+
+    refute_match(/add(ed|ing) channel :bad/, output.string)
+    refute @bus.channel?(:bad)
+  ensure
+    TypedBus.logger = original
+  end
+
   def test_add_channel_logs_nil_timeout_as_none
     original = TypedBus.logger
     output = StringIO.new
     TypedBus.logger = Logger.new(output)
     @bus.add_channel(:forever, timeout: nil)
 
-    assert_includes output.string, "adding channel :forever (type=any, timeout=none,"
+    assert_includes output.string, "added channel :forever (type=any, timeout=none,"
   ensure
     TypedBus.logger = original
   end

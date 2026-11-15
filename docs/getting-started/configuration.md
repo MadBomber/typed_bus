@@ -8,7 +8,7 @@ TypedBus resolves parameters through a three-tier cascade: **Global → Bus → 
 |-----------|---------|-------------|
 | `timeout` | `30` | Delivery ACK deadline in seconds; `nil` = never auto-nack |
 | `max_pending` | `nil` | Backpressure limit (positive `Integer`); `nil` = unbounded |
-| `throttle` | `0.0` | Remaining-capacity ratio where backoff begins; `0.0` = disabled |
+| `throttle` | `0.0` | Remaining-capacity ratio where backoff begins; `0` or `nil` = off, else strictly between `0` and `1`; requires `max_pending` |
 | `logger` | `nil` | Ruby Logger instance (global-only) |
 | `log_level` | `Logger::INFO` | Log level applied to the logger (global-only) |
 
