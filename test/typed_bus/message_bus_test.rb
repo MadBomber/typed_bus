@@ -315,7 +315,14 @@ class MessageBusTest < Minitest::Test
 
   def test_close_all_on_empty_bus
     bus = TypedBus::MessageBus.new
-    bus.close_all  # should not raise
+    bus.close_all
+
+    bus.add_channel(:later)
+    received = []
+    bus.subscribe(:later) { |d| received << d.message; d.ack! }
+    Async { bus.publish(:later, "still open") }
+
+    assert_equal ["still open"], received
   end
 
   # --- clear on empty bus ---
