@@ -1791,7 +1791,7 @@
 </span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="w">  </span><span class="ss">timeout</span><span class="p">:</span><span class="w"> </span><span class="mi">5</span>
 </span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="p">)</span>
 </span></code></pre></div>
-<p>The <code>throttle</code> value is a <code>Float</code> between <code>0.0</code> (exclusive) and <code>1.0</code> (exclusive), representing the remaining-capacity ratio at which backoff begins.</p>
+<p>The <code>throttle</code> value is a number strictly between <code>0</code> and <code>1</code>, representing the remaining-capacity ratio at which backoff begins. <code>0</code> (the default) or <code>nil</code> turns throttling off.</p>
 <h2 id="backoff-curve">Backoff Curve<a class="headerlink" href="#backoff-curve" title="Permanent link">&para;</a></h2>
 <p>Below the threshold, each publish sleeps for <code>1 / (max_pending * remaining_ratio)</code> seconds — an asymptotic delay that approaches infinity as remaining capacity approaches zero.</p>
 <p>With <code>max_pending: 10, throttle: 0.5</code>:</p>

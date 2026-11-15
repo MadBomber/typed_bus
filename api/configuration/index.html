@@ -1987,7 +1987,7 @@
 <tbody>
 <tr>
 <td><code>timeout</code></td>
-<td><code>Numeric</code></td>
+<td><code>Numeric</code>, <code>nil</code></td>
 <td><code>30</code></td>
 <td>Delivery ACK deadline in seconds; <code>nil</code> = never auto-nack</td>
 </tr>
@@ -1999,9 +1999,9 @@
 </tr>
 <tr>
 <td><code>throttle</code></td>
-<td><code>Float</code></td>
+<td><code>Numeric</code>, <code>nil</code></td>
 <td><code>0.0</code></td>
-<td>Remaining-capacity ratio where backoff begins</td>
+<td>Remaining-capacity ratio where backoff begins; <code>0</code> or <code>nil</code> = off, else strictly between <code>0</code> and <code>1</code></td>
 </tr>
 <tr>
 <td><code>logger</code></td>

@@ -1795,7 +1795,7 @@
 <tbody>
 <tr>
 <td><code>:orders_published</code></td>
-<td>Messages published</td>
+<td>Messages <code>MessageBus#publish</code> accepted (a publish to an already-closed channel or with the wrong type raises and is not counted)</td>
 </tr>
 <tr>
 <td><code>:orders_delivered</code></td>
