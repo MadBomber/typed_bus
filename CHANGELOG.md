@@ -63,6 +63,11 @@
   raise the closed error even when an `on_dead_letter` callback raises during
   the force-nack. Previously such a publisher stayed blocked forever with
   `timeout: nil` (#43).
+- `DeliveryTracker#on_complete`, `#on_resolved` and `#on_dead_letter` now add
+  a callback instead of replacing the previous one. Hooking the tracker that
+  `publish` returns no longer replaces the channel's own bookkeeping, which left
+  the tracker pending, skipped the `delivered` stat, and on a bounded channel
+  blocked the next `publish` forever (#50).
 - `Channel#publish` and `MessageBus#publish` YARD now document the `nil`
   return when there are no subscribers, and the `throttle` params list the
   accepted `Numeric`/`nil` values (#42).

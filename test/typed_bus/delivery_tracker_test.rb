@@ -133,6 +133,39 @@ class DeliveryTrackerTest < Minitest::Test
     assert resolved
   end
 
+  def test_multiple_callbacks_per_event_all_fire_in_order
+    calls = []
+    tracker = make_tracker
+    tracker.on_complete { calls << :complete_1 }
+    tracker.on_complete { calls << :complete_2 }
+    tracker.on_resolved { calls << :resolved_1 }
+    tracker.on_resolved { calls << :resolved_2 }
+    tracker.ack(1)
+    tracker.ack(2)
+    assert_equal %i[complete_1 complete_2 resolved_1 resolved_2], calls
+  end
+
+  def test_multiple_on_dead_letter_callbacks_all_fire
+    dead = []
+    tracker = make_tracker
+    tracker.on_dead_letter { |id| dead << [:a, id] }
+    tracker.on_dead_letter { |id| dead << [:b, id] }
+    tracker.nack(2)
+    assert_equal [[:a, 2], [:b, 2]], dead
+  end
+
+  def test_registering_without_a_block_is_ignored
+    calls = []
+    tracker = make_tracker
+    tracker.on_complete { calls << :complete }
+    tracker.on_complete
+    tracker.on_resolved
+    tracker.on_dead_letter
+    tracker.ack(1)
+    tracker.ack(2)
+    assert_equal %i[complete], calls
+  end
+
   def test_message_attr_reader
     tracker = make_tracker
     assert_equal "payload", tracker.message
