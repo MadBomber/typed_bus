@@ -1,0 +1,56 @@
+# typed_bus
+
+> TypedBus is a Ruby gem that provides an async pub/sub message bus built on the `async` gem with fiber-only concurrency. It offers named, optionally typed channels with explicit ACK/NACK delivery, dead letter queues, bounded backpressure, adaptive throttling, delivery timeouts, and per-channel statistics, all within a single Async reactor.
+
+Key facts:
+
+- Install with `gem "typed_bus"`; requires Ruby >= 3.2.0 and depends on `async` (~> 2.0).
+- `TypedBus::MessageBus` is the facade: `add_channel`, `subscribe`, `publish`. Publish inside an `Async do ... end` block.
+- A channel created with `type:` raises `ArgumentError` when a message of the wrong class is published.
+- Every subscriber receives a `Delivery` and must call `ack!` or `nack!`. A delivery that is neither acked nor nacked before its `timeout` is auto-nacked; nacked and timed-out deliveries go to the channel's dead letter queue.
+- `max_pending:` bounds unresolved deliveries; publishers block when the limit is reached. `throttle:` (requires `max_pending:`) adds progressive backoff as remaining capacity falls.
+- Configuration cascades Global (`TypedBus.configure`) → Bus → Channel.
+
+## Docs
+
+- [Overview](https://madbomber.github.io/typed_bus/): What TypedBus is and its feature list
+- [Concepts](https://madbomber.github.io/typed_bus/concepts/): Channels, deliveries, ACK/NACK, and dead letters
+- [Installation](https://madbomber.github.io/typed_bus/getting-started/installation/): Adding the gem and requirements
+- [Quick Start](https://madbomber.github.io/typed_bus/getting-started/quick-start/): First bus, channel, subscriber, and publish
+- [Configuration](https://madbomber.github.io/typed_bus/getting-started/configuration/): Global, bus, and channel settings
+- [Typed Channels](https://madbomber.github.io/typed_bus/guides/typed-channels/): Restricting a channel to one class
+- [Delivery and Acknowledgment](https://madbomber.github.io/typed_bus/guides/delivery-and-ack/): ack!, nack!, and timeouts
+- [Dead Letter Queues](https://madbomber.github.io/typed_bus/guides/dead-letter-queues/): Inspecting and draining failed deliveries
+- [Backpressure](https://madbomber.github.io/typed_bus/guides/backpressure/): Bounding pending deliveries with max_pending
+- [Adaptive Throttling](https://madbomber.github.io/typed_bus/guides/adaptive-throttling/): Progressive backoff as capacity fills
+- [Error Handling](https://madbomber.github.io/typed_bus/guides/error-handling/): Subscriber exceptions and closed channels
+- [Graceful Shutdown](https://madbomber.github.io/typed_bus/guides/graceful-shutdown/): Closing channels and buses cleanly
+
+## API
+
+- [API Reference](https://madbomber.github.io/typed_bus/api/): Index of public classes
+- [MessageBus](https://madbomber.github.io/typed_bus/api/message-bus/): Channel registry and publish/subscribe facade
+- [Channel](https://madbomber.github.io/typed_bus/api/channel/): Named pub/sub topic with type, timeout, and backpressure
+- [Delivery](https://madbomber.github.io/typed_bus/api/delivery/): Message envelope with ack! and nack!
+- [DeadLetterQueue](https://madbomber.github.io/typed_bus/api/dead-letter-queue/): Storage for nacked and timed-out deliveries
+- [Configuration](https://madbomber.github.io/typed_bus/api/configuration/): Global defaults and validation
+- [Stats](https://madbomber.github.io/typed_bus/api/stats/): Per-channel counters
+
+## Examples
+
+- [01_basic_usage.rb](https://github.com/MadBomber/typed_bus/blob/develop/examples/01_basic_usage.rb): One channel, one subscriber, explicit ack
+- [02_typed_channels.rb](https://github.com/MadBomber/typed_bus/blob/develop/examples/02_typed_channels.rb): Type-constrained channels with Data classes
+- [04_nack_and_dead_letters.rb](https://github.com/MadBomber/typed_bus/blob/develop/examples/04_nack_and_dead_letters.rb): nack! and the dead letter queue
+- [06_backpressure.rb](https://github.com/MadBomber/typed_bus/blob/develop/examples/06_backpressure.rb): Bounded channels blocking publishers
+- [07_message_bus.rb](https://github.com/MadBomber/typed_bus/blob/develop/examples/07_message_bus.rb): The MessageBus facade over many channels
+- [10_concurrent_pipeline.rb](https://github.com/MadBomber/typed_bus/blob/develop/examples/10_concurrent_pipeline.rb): Multi-stage pipeline combining the features
+
+## Optional
+
+- [Architecture](https://madbomber.github.io/typed_bus/architecture/): Publish flow, concurrency model, configuration cascade
+- [Stats and Monitoring](https://madbomber.github.io/typed_bus/guides/stats-and-monitoring/): Reading per-channel counters
+- [Logging](https://madbomber.github.io/typed_bus/guides/logging/): Assigning a Logger to TypedBus.logger
+- [00_config.rb](https://github.com/MadBomber/typed_bus/blob/develop/examples/00_config.rb): Three-tier configuration cascade
+- [14_adaptive_throttling.rb](https://github.com/MadBomber/typed_bus/blob/develop/examples/14_adaptive_throttling.rb): Throttle backoff in action
+- [Examples README](https://github.com/MadBomber/typed_bus/blob/develop/examples/README.md): Index of all examples
+- [CHANGELOG](https://github.com/MadBomber/typed_bus/blob/develop/CHANGELOG.md): Release history

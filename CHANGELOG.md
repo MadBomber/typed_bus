@@ -2,6 +2,10 @@
 
 ### Fixed
 
+- `MessageBus#publish` no longer counts a message in `<channel>_published`
+  when the channel is already closed or the message has the wrong type.
+  Those publishes raise and were still counted, which inflated the counter
+  and skewed rates computed from it.
 - `Channel#subscribe` and `MessageBus#subscribe` now raise `ArgumentError`
   when called without a block. Previously a blockless subscriber was
   registered with a nil handler, so every published message waited on an
@@ -12,8 +16,10 @@
   empties the queue first and yields that snapshot once; entries added
   during the drain (such as a retry that fails again) wait for the next
   drain. If the block raises, the entry it was handling and the ones not
-  yet yielded go back to the front of the queue (#6). Found and fixed by
-  BomberBot.
+  yet yielded go back to the front of the queue (#6). If the block exits
+  early with `break` or `return`, the entry it was handling counts as done
+  and the ones not yet yielded go back on the queue; in 0.0.1 they were
+  lost (#29). Found and fixed by BomberBot.
 - Declare `logger` as a runtime dependency in the gemspec so
   `require "typed_bus"` loads under Bundler on Ruby 4.0+, where `logger`
   is a bundled gem rather than a default gem. Found and fixed by BomberBot.
@@ -50,6 +56,16 @@
   publish to a bounded channel (#31).
 - `timeout: nil` now logs as `timeout=none` instead of `timeout=s`, and the
   option tables document that `nil` means never auto-nack (#27).
+- `MessageBus#add_channel` logs `added channel :name` after the channel is
+  built, instead of `adding channel :name` before validation, so a rejected
+  `add_channel` no longer logs as if the channel had been added (#47).
+- `Channel#close` now always wakes publishers waiting for capacity, so they
+  raise the closed error even when an `on_dead_letter` callback raises during
+  the force-nack. Previously such a publisher stayed blocked forever with
+  `timeout: nil` (#43).
+- `Channel#publish` and `MessageBus#publish` YARD now document the `nil`
+  return when there are no subscribers, and the `throttle` params list the
+  accepted `Numeric`/`nil` values (#42).
 - Closing a channel from a subscriber handler while `publish` is still fanning
   out no longer leaves the remaining subscribers' deliveries pending. They are
   nacked into the dead letter queue instead of being dispatched (#48).
@@ -73,6 +89,8 @@
 - `ratatui_ruby` and `aigcm` moved to an optional `:extras` bundle group;
   the default bundle no longer builds a Rust native extension.
 - Refreshed `Gemfile.lock` to async 2.46.0 (#14).
+- Refreshed the development `Gemfile.lock` with a full `bundle update`
+  (minitest 6.1, rake 13.4, simplecov 1.3, rdoc 8.1, prism 2.1) (#41).
 - Removed the no-op `Configuration#initialize_copy` override (#21).
 
 ### Added
@@ -80,7 +98,8 @@
 - MIT `LICENSE` file (#11); `documentation_uri`, `bug_tracker_uri`, and
   `rubygems_mfa_required` gemspec metadata (#12).
 - CI workflow running the test suite on Ruby 3.2-4.0 plus a load smoke test
-  outside the dev bundle (#20); Dependabot configuration (#15).
+  outside the dev bundle (#20); Dependabot configuration (#15), with its
+  update PRs targeting the `develop` branch (#40).
 
 ## [0.0.1] - 2026-02-07
 

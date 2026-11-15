@@ -69,6 +69,25 @@ class DeadLetterQueueTest < Minitest::Test
     assert_equal 3, dlq.size
   end
 
+  def test_drain_block_non_standard_error_keeps_unprocessed_entries
+    dlq = TypedBus::DeadLetterQueue.new
+    %w[a b c].each { |m| dlq.push(make_delivery(m)) }
+    stop = Class.new(Exception) # not a StandardError, like Interrupt or Async::Stop
+
+    processed = []
+    assert_raises(stop) do
+      dlq.drain do |d|
+        raise stop if d.message == "b"
+
+        processed << d.message
+      end
+    end
+
+    # "b" was interrupted, so "b" and "c" stay queued, in order.
+    assert_equal %w[a], processed
+    assert_equal %w[b c], dlq.map(&:message)
+  end
+
   def test_drain_block_break_puts_back_only_unyielded_entries
     dlq = TypedBus::DeadLetterQueue.new
     %w[a b c].each { |m| dlq.push(make_delivery(m)) }

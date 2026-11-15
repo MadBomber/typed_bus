@@ -213,6 +213,41 @@ class ChannelTest < Minitest::Test
     assert channel.dead_letter_queue.empty?
   end
 
+  def test_clear_wakes_publisher_blocked_on_backpressure
+    channel = make_channel(max_pending: 1, timeout: nil)
+    channel.subscribe { |_d| } # never acks
+
+    second = nil
+    Async do |task|
+      channel.publish("first")
+      publisher = task.async { second = channel.publish("second") } # blocks at capacity
+
+      sleep(0.01)
+      channel.clear!
+      task.with_timeout(1) { publisher.wait }
+    rescue Async::TimeoutError
+      publisher.stop # still blocked: clear! never woke it
+    end
+
+    assert_instance_of TypedBus::DeliveryTracker, second
+  end
+
+  def test_clear_discards_in_flight_deliveries_before_close
+    stats = TypedBus::Stats.new
+    channel = TypedBus::Channel.new(:test, timeout: nil, stats: stats)
+    channel.subscribe { |_d| } # never acks
+
+    Async do
+      3.times { |i| channel.publish(i) }
+      channel.clear!
+      channel.close
+    end
+
+    assert channel.dead_letter_queue.empty?, "close must not dead-letter deliveries clear! discarded"
+    assert_equal 0, stats[:test_dead_lettered]
+    assert_equal 0, stats[:test_nacked]
+  end
+
   # --- Subscriber count ---
 
   def test_subscriber_count
@@ -326,6 +361,59 @@ class ChannelTest < Minitest::Test
     assert_match(/Channel :test is closed/, error&.message)
     assert_equal ["first"], received
     assert_equal 0, channel.pending_count
+  end
+
+  def test_close_wakes_blocked_publisher_when_dead_letter_callback_raises
+    channel = make_channel(max_pending: 1, timeout: nil)
+    channel.subscribe { |_d| } # never acks
+    channel.subscribe { |_d| } # never acks
+    channel.dead_letter_queue.on_dead_letter { |_| raise "boom" }
+
+    close_error = nil
+    publish_error = nil
+    Async do |task|
+      channel.publish("first")
+      publisher = task.async do
+        channel.publish("second") # blocks at capacity
+      rescue RuntimeError => e
+        publish_error = e
+      end
+
+      sleep(0.01)
+      begin
+        channel.close
+      rescue RuntimeError => e
+        close_error = e
+      end
+      task.with_timeout(1) { publisher.wait }
+    rescue Async::TimeoutError
+      publisher.stop # still blocked: the close never woke it
+    end
+
+    assert_equal "boom", close_error&.message
+    assert_match(/Channel :test is closed/, publish_error&.message)
+  end
+
+  def test_nil_throttle_means_off_with_or_without_max_pending
+    unbounded = make_channel(throttle: nil)
+    bounded   = make_channel(throttle: nil, max_pending: 2)
+    received = []
+    [unbounded, bounded].each { |ch| ch.subscribe { |d| received << d.message; d.ack! } }
+
+    Async do
+      unbounded.publish("u")
+      bounded.publish("b")
+    end
+
+    assert_equal %w[u b], received
+  end
+
+  def test_closed_typed_channel_raises_closed_before_type_check
+    channel = make_channel(type: String)
+    channel.close
+
+    error = assert_raises(RuntimeError) { channel.publish(42) }
+    assert_match(/Channel :test is closed/, error.message)
   end
 
   def test_close_from_handler_dead_letters_remaining_fanout_deliveries

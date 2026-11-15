@@ -12,8 +12,10 @@ flowchart TD
     D -- no --> F{Bounded channel?}
     E --> F
     F -- yes --> G[Wait for capacity]
-    F -- no --> H{Subscribers?}
-    G --> H
+    F -- no --> CL{Closed while waiting?}
+    G --> CL
+    CL -- yes --> ERR
+    CL -- no --> H{Subscribers?}
     H -- none --> I[Route to DLQ]
     H -- 1+ --> J[Create DeliveryTracker]
     J --> K[Fan out Delivery per subscriber]
@@ -26,7 +28,8 @@ flowchart TD
     O --> Q
     P --> Q
     Q -- yes, all acked --> R[on_complete → delivered stat]
-    Q -- yes, some nacked --> S[on_resolved → cleanup]
+    R --> S[on_resolved → cleanup, free capacity]
+    Q -- yes, some nacked --> S
 ```
 
 ## Step-by-Step
@@ -45,7 +48,9 @@ If `throttle` is configured and the channel is bounded, the remaining capacity r
 
 ### 4. Backpressure
 
-If the channel is bounded (`max_pending` is set) and the pending delivery count has reached the limit, the publishing fiber blocks on an `Async::Condition` until a subscriber ACKs and frees a slot.
+If the channel is bounded (`max_pending` is set) and the pending delivery count has reached the limit, the publishing fiber blocks on an `Async::Condition` until a delivery resolves and frees a slot. Any resolution counts: ack, nack, timeout, `close`, or `clear!`.
+
+After the throttle and backpressure waits, the closed guard runs again. If the channel was closed while the publisher slept or waited, `publish` raises `RuntimeError` and the message is not delivered.
 
 ### 5. Fan-Out
 
@@ -56,11 +61,13 @@ A `DeliveryTracker` is created for this message, tracking the set of current sub
 Each subscriber must call `ack!` or `nack!` on its Delivery. If neither is called before the timeout, the delivery auto-nacks. The tracker aggregates responses:
 
 - **All acked** — the `on_complete` callback fires, incrementing the `:delivered` stat.
-- **Any nacked** — the `on_resolved` callback fires for cleanup. NACKed deliveries are pushed to the dead letter queue.
+- **Any nacked** — NACKed deliveries are pushed to the dead letter queue.
+
+In both cases the `on_resolved` callback then fires for cleanup: it runs once every subscriber has resolved, whatever the outcome.
 
 ### 7. Backpressure Release
 
-When a tracker resolves, the pending delivery is removed and `@backpressure.signal` wakes any blocked publisher fiber.
+When a tracker resolves, the pending delivery is removed and `@backpressure.signal` wakes any blocked publisher fiber. `close` and `clear!` also signal, so a waiting publisher re-checks capacity and the closed guard.
 
 ## No-Subscriber Path
 

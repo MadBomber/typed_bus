@@ -15,7 +15,9 @@ A named, typed pub/sub channel with explicit acknowledgment tracking.
 | `timeout` | `30` | Seconds before delivery auto-nacks; `nil` = never auto-nack |
 | `max_pending` | `nil` | Backpressure limit (positive `Integer`); `nil` = unbounded |
 | `stats` | `nil` | Optional `Stats` instance for counters |
-| `throttle` | `0.0` | Capacity ratio where backoff begins |
+| `throttle` | `0.0` | Capacity ratio where backoff begins; `0` or `nil` = off, else strictly between 0 and 1 |
+
+**Raises:** `ArgumentError` if `type` is not `nil`, a `Class`, or a `Module`; if `max_pending` is not `nil` or a positive `Integer`; if `throttle` is out of range; or if `throttle` is set without `max_pending`.
 
 ```ruby
 channel = TypedBus::Channel.new(:orders,

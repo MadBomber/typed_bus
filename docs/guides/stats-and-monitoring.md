@@ -8,7 +8,7 @@ For each channel named `:orders`, the following counters are tracked:
 
 | Counter | Description |
 |---------|-------------|
-| `:orders_published` | Messages published |
+| `:orders_published` | Messages `MessageBus#publish` accepted (a publish to an already-closed channel or with the wrong type raises and is not counted) |
 | `:orders_delivered` | All subscribers ACKed (message fully delivered) |
 | `:orders_nacked` | Explicit nacks by subscribers |
 | `:orders_timed_out` | Delivery timeouts (auto-nack) |

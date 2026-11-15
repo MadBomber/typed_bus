@@ -3,7 +3,8 @@
 
 # 14 — Adaptive Rate Limiting (Throttle)
 #
-# Demonstrates asymptotic backoff using throttle: Float.
+# Demonstrates asymptotic backoff using throttle: (a ratio strictly between 0 and 1;
+# 0 or nil turns it off).
 # The value is the remaining-capacity ratio at which backoff begins.
 # Below that threshold, each publish sleeps for
 # 1 / (max_pending * remaining_ratio) seconds — progressively slower
