@@ -2114,6 +2114,7 @@
 <h3 id="pending_count-integer"><code>pending_count</code> → <code>Integer</code><a class="headerlink" href="#pending_count-integer" title="Permanent link">&para;</a></h3>
 <p>Number of subscribers still pending.</p>
 <h2 id="callbacks">Callbacks<a class="headerlink" href="#callbacks" title="Permanent link">&para;</a></h2>
+<p>Each method adds a callback; registering another one does not replace the earlier ones. Callbacks for an event run in registration order. <code>Channel#publish</code> registers its own <code>on_complete</code> and <code>on_resolved</code> bookkeeping first, so hooks you add to the returned tracker run after the channel has recorded stats and released capacity.</p>
 <h3 id="on_complete"><code>on_complete { ... }</code><a class="headerlink" href="#on_complete" title="Permanent link">&para;</a></h3>
 <p>Called when all subscribers have resolved and every one ACKed (successful delivery).</p>
 <h3 id="on_resolved"><code>on_resolved { ... }</code><a class="headerlink" href="#on_resolved" title="Permanent link">&para;</a></h3>
