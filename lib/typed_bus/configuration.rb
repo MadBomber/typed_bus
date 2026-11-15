@@ -90,7 +90,9 @@ module TypedBus
 
     # Set the log level and apply it to the current logger.
     # @param level [Integer] a Logger constant (Logger::DEBUG, Logger::INFO, etc.)
+    # @raise [ArgumentError] if level is not a valid Logger level
     def log_level=(level)
+      Logger.new(nil, level: level)
       @log_level = level
       @logger&.level = level
     end
