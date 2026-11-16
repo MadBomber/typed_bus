@@ -244,4 +244,37 @@ class DeadLetterQueueTest < Minitest::Test
   ensure
     TypedBus.logger = original
   end
+
+  def test_logs_timeout_reason_for_timed_out_delivery
+    log_output = StringIO.new
+    original = TypedBus.logger
+    TypedBus.logger = Logger.new(log_output)
+
+    dlq = TypedBus::DeadLetterQueue.new
+    Async do
+      delivery = TypedBus::Delivery.new(
+        "late", channel_name: :test, subscriber_id: 1, timeout: 0.01,
+        on_nack: ->(_id) {}
+      )
+      sleep(0.05)
+      assert delivery.timed_out?
+      dlq.push(delivery)
+    end
+
+    assert_match(/entry added .*reason=timeout/, log_output.string)
+  ensure
+    TypedBus.logger = original
+  end
+
+  def test_clear_on_empty_queue_logs_nothing
+    log_output = StringIO.new
+    original = TypedBus.logger
+    TypedBus.logger = Logger.new(log_output)
+
+    TypedBus::DeadLetterQueue.new.clear!
+
+    assert_empty log_output.string
+  ensure
+    TypedBus.logger = original
+  end
 end
