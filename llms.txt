@@ -4,7 +4,7 @@
 
 Key facts:
 
-- Install with `gem "typed_bus"`; requires Ruby >= 3.2.0 and depends on `async` (~> 2.0).
+- Install with `gem "typed_bus"`; requires Ruby >= 3.2.0 and depends on `async` (~> 2.0) and `logger`.
 - `TypedBus::MessageBus` is the facade: `add_channel`, `subscribe`, `publish`. Publish inside an `Async do ... end` block.
 - A channel created with `type:` raises `ArgumentError` when a message of the wrong class is published.
 - Every subscriber receives a `Delivery` and must call `ack!` or `nack!`. A delivery that is neither acked nor nacked before its `timeout` is auto-nacked; nacked and timed-out deliveries go to the channel's dead letter queue.
@@ -32,6 +32,7 @@ Key facts:
 - [MessageBus](https://madbomber.github.io/typed_bus/api/message-bus/): Channel registry and publish/subscribe facade
 - [Channel](https://madbomber.github.io/typed_bus/api/channel/): Named pub/sub topic with type, timeout, and backpressure
 - [Delivery](https://madbomber.github.io/typed_bus/api/delivery/): Message envelope with ack! and nack!
+- [DeliveryTracker](https://madbomber.github.io/typed_bus/api/delivery-tracker/): Aggregate ACK/NACK result of one publish
 - [DeadLetterQueue](https://madbomber.github.io/typed_bus/api/dead-letter-queue/): Storage for nacked and timed-out deliveries
 - [Configuration](https://madbomber.github.io/typed_bus/api/configuration/): Global defaults and validation
 - [Stats](https://madbomber.github.io/typed_bus/api/stats/): Per-channel counters
