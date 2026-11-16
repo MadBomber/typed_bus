@@ -74,6 +74,9 @@
 - Closing a channel from a subscriber handler while `publish` is still fanning
   out no longer leaves the remaining subscribers' deliveries pending. They are
   nacked into the dead letter queue instead of being dispatched (#48).
+- `Configuration#log_level=` now rejects an invalid level before storing it.
+  Previously a bad level was stored anyway, leaving `log_level` out of step
+  with the logger, or raising only later at `logger=` (#74).
 
 ### Changed
 

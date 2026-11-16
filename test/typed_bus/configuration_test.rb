@@ -80,6 +80,23 @@ class ConfigurationTest < Minitest::Test
     assert_equal Logger::ERROR, @config.log_level
   end
 
+  def test_invalid_log_level_with_logger_leaves_state_unchanged
+    logger = Logger.new(StringIO.new)
+    @config.logger = logger
+
+    assert_raises(ArgumentError) { @config.log_level = :verbose }
+    assert_equal Logger::INFO, @config.log_level
+    assert_equal Logger::INFO, logger.level
+  end
+
+  def test_invalid_log_level_without_logger_raises_at_assignment
+    assert_raises(ArgumentError) { @config.log_level = :verbose }
+    assert_equal Logger::INFO, @config.log_level
+
+    @config.logger = Logger.new(StringIO.new)
+    assert_equal Logger::INFO, @config.logger.level
+  end
+
   # --- dup independence ---
 
   def test_dup_creates_independent_copy
