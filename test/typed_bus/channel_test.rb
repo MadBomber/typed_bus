@@ -199,16 +199,19 @@ class ChannelTest < Minitest::Test
   end
 
   def test_clear_empties_pending_and_dlq
-    channel = make_channel(timeout: 1)
+    channel = make_channel(timeout: nil)
     channel.subscribe { |_d| } # never acks
 
-    Async { channel.publish("msg") }
+    Async do
+      channel.publish("msg")
+      channel.dead_letter_queue.push(
+        TypedBus::Delivery.new("old", channel_name: :test, subscriber_id: -1)
+      )
+      assert_equal 1, channel.pending_count
 
-    channel.dead_letter_queue.push(
-      TypedBus::Delivery.new("old", channel_name: :test, subscriber_id: -1)
-    )
+      channel.clear!
+    end
 
-    channel.clear!
     assert_equal 0, channel.pending_count
     assert channel.dead_letter_queue.empty?
   end
