@@ -156,9 +156,9 @@ class ChannelThrottleTest < Minitest::Test
 
   def test_throttle_delay_measurably_slows_publishes
     channel = TypedBus::Channel.new(:test,
-      max_pending: 5,
+      max_pending: 20,
       timeout: 5,
-      throttle: 0.9  # starts throttling at 90% remaining (i.e., almost immediately)
+      throttle: 0.95 # starts throttling at 95% remaining (i.e., from the second publish)
     )
     deliveries = []
     channel.subscribe { |d| deliveries << d }
@@ -208,13 +208,88 @@ class ChannelThrottleTest < Minitest::Test
     assert_match(/between 0\.0 and 1\.0/, error.message)
   end
 
+  # --- Full capacity must not block forever ---
+
+  def test_throttle_at_full_capacity_yields_to_backpressure
+    channel = TypedBus::Channel.new(:test,
+      max_pending: 1,
+      timeout: 0.2,
+      throttle: 0.5
+    )
+    deliveries = []
+    channel.subscribe { |d| deliveries << d }
+
+    completed = false
+    Async do |task|
+      task.with_timeout(2) do
+        # Fill to full capacity: pending == max_pending.
+        channel.publish("first")
+
+        # A second publish at full capacity must block on backpressure,
+        # not sleep forever inside the throttle.
+        publisher = task.async do
+          channel.publish("second")
+          completed = true
+        end
+
+        sleep(0.05) # let the publisher reach the throttle/backpressure point
+        deliveries.shift.ack! # drain capacity so backpressure can release the publisher
+
+        publisher.wait
+      end
+    rescue Async::TimeoutError
+      # completed stays false — the publisher hung at full capacity
+    end
+
+    assert completed,
+      "publisher at full capacity should proceed after an ack, not sleep forever"
+  end
+
+  def test_close_during_throttle_sleep_rejects_publish
+    # 7 of 10 pending leaves 30% remaining, below the 50% threshold,
+    # so the next publish sleeps about 0.33s before delivering.
+    channel = make_channel(max_pending: 10, throttle: 0.5, timeout: 1)
+    received = []
+    channel.subscribe { |d| received << d.message } # never acks
+
+    error = nil
+    Async do |task|
+      task.with_timeout(2) do
+        7.times { |i| channel.publish(i) }
+        publisher = task.async do
+          channel.publish(:late)
+        rescue RuntimeError => e
+          error = e
+        end
+
+        sleep(0.05) # publisher is now inside the throttle sleep
+        channel.close
+        publisher.wait
+        sleep(0.01)
+      end
+    end
+
+    assert_match(/Channel :test is closed/, error&.message)
+    refute_includes received, :late
+    assert_equal 0, channel.pending_count
+  end
+
   # --- Integer coercion ---
 
   def test_throttle_integer_coerced_to_float
     # throttle: 0 should be treated as 0.0 (disabled)
-    channel = make_channel(max_pending: 10, throttle: 0)
-    channel.subscribe { |d| d.ack! }
-    Async { channel.publish("msg") }
-    # should not raise, treated as disabled
+    stats = TypedBus::Stats.new
+    channel = make_channel(max_pending: 2, throttle: 0, stats: stats)
+    held = []
+    channel.subscribe { |d| held << d }
+
+    Async do
+      # Fill to capacity without acking: an active throttle would back off here.
+      2.times { |i| channel.publish(i) }
+      held.each(&:ack!)
+    end
+
+    assert_equal 2, stats[:test_delivered]
+    assert_equal 0, stats[:test_throttled]
   end
 end

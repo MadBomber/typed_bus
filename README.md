@@ -67,10 +67,10 @@ channel = TypedBus::Channel.new(:orders, timeout: 10)
 
 | Option | Type | Default | Description |
 |--------|------|---------|-------------|
-| `type` | `Class` | `nil` | Restricts published messages to a specific class |
-| `timeout` | `Numeric` | `30` | Seconds before unresolved deliveries auto-nack |
-| `max_pending` | `Integer` | `nil` | Backpressure limit; `nil` = unbounded |
-| `throttle` | `Float` | `0.0` | Remaining-capacity ratio where backoff begins; `0.0` = disabled |
+| `type` | `Class` or `Module` | `nil` | Restricts published messages to a specific class or module |
+| `timeout` | `Numeric`, `nil` | `30` | Seconds before unresolved deliveries auto-nack; `nil` = never auto-nack |
+| `max_pending` | `Integer`, `nil` | `nil` | Backpressure limit (positive `Integer`); `nil` = unbounded |
+| `throttle` | `Numeric`, `nil` | `0.0` | Remaining-capacity ratio where backoff begins; `0` or `nil` = off, else strictly between `0` and `1`; requires `max_pending` |
 
 ### Typed Channels
 
@@ -176,7 +176,11 @@ channel = TypedBus::Channel.new(:work,
 
 When a bounded channel approaches capacity, adaptive throttling progressively slows publishers before they hit the hard block.
 
-Set `throttle` to a `Float` between `0.0` (exclusive) and `1.0` (exclusive). The value is the remaining-capacity ratio at which backoff begins. Below that threshold, each publish sleeps for `1 / (max_pending * remaining_ratio)` seconds.
+Set `throttle` to a number strictly between `0` and `1`, on a channel that also sets `max_pending`. The value is the remaining-capacity ratio at which backoff begins. Below that threshold, each publish sleeps for `1 / (max_pending * remaining_ratio)` seconds.
+
+- `throttle: 0.0` (or `0`, or `nil`) disables throttling (the default)
+- Any other value outside that range raises `ArgumentError` as soon as it is set, in `Configuration#throttle=`, `MessageBus.new`, `add_channel`, or `Channel.new`
+- A non-zero `throttle` without `max_pending` raises `ArgumentError` when the channel is created
 
 ```ruby
 channel = TypedBus::Channel.new(:pipeline,
@@ -220,9 +224,9 @@ TypedBus resolves parameters through a three-tier cascade: **Global → Bus → 
 
 | Parameter | Default | Description |
 |-----------|---------|-------------|
-| `timeout` | `30` | Delivery ACK deadline in seconds |
-| `max_pending` | `nil` | Backpressure limit; `nil` = unbounded |
-| `throttle` | `0.0` | Remaining-capacity ratio where backoff begins; `0.0` = disabled |
+| `timeout` | `30` | Delivery ACK deadline in seconds; `nil` = never auto-nack |
+| `max_pending` | `nil` | Backpressure limit (positive `Integer`); `nil` = unbounded |
+| `throttle` | `0.0` | Remaining-capacity ratio where backoff begins; `0` or `nil` = off, else strictly between `0` and `1`; requires `max_pending` |
 | `logger` | `nil` | Ruby Logger instance (global-only) |
 | `log_level` | `Logger::INFO` | Log level applied to the logger (global-only) |
 
@@ -326,7 +330,7 @@ bus.add_channel(:logs, throttle: 0.0)
 ```ruby
 bus.stats[:orders_published]     # messages published
 bus.stats[:orders_delivered]     # all subscribers acked
-bus.stats[:orders_nacked]        # explicit nacks
+bus.stats[:orders_nacked]        # nacks: nack!, raising handler, close, or no subscribers
 bus.stats[:orders_timed_out]     # delivery timeouts
 bus.stats[:orders_dead_lettered] # entries added to DLQ
 bus.stats[:orders_throttled]     # publishes that were rate-limited
@@ -334,6 +338,10 @@ bus.stats[:orders_throttled]     # publishes that were rate-limited
 bus.stats.to_h                   # snapshot of all counters
 bus.stats.reset!                 # zero all counters
 ```
+
+`published` and `delivered` count once per message. `nacked`, `timed_out` and
+`dead_lettered` count once per subscriber delivery, so one publish to a channel
+with three subscribers can add up to 3 to each of them.
 
 When using `Channel` directly, pass a `Stats` instance:
 
@@ -408,9 +416,10 @@ DeliveryTracker (aggregates N responses)
 
 ## Requirements
 
-- Ruby >= 3.2.0
+- Ruby >= 4.0
 - [async](https://github.com/socketry/async) ~> 2.0
+- [logger](https://github.com/ruby/logger)
 
 ## License
 
-MIT
+[MIT](LICENSE)

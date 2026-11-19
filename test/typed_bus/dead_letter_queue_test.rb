@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require "test_helper"
+require "timeout"
 
 class DeadLetterQueueTest < Minitest::Test
   def make_delivery(msg = "payload")
@@ -47,6 +48,131 @@ class DeadLetterQueueTest < Minitest::Test
     dlq.drain { |d| yielded << d.message }
     assert_equal ["x"], yielded
     assert dlq.empty?
+  end
+
+  def test_drain_block_raise_keeps_unprocessed_entries
+    dlq = TypedBus::DeadLetterQueue.new
+    %w[a b c d e].each { |m| dlq.push(make_delivery(m)) }
+
+    processed = []
+    assert_raises(RuntimeError) do
+      dlq.drain do |d|
+        raise "boom" if d.message == "c"
+
+        processed << d.message
+      end
+    end
+
+    # "c" raised, so "c", "d", "e" remain in the queue for a retry.
+    assert_equal %w[a b], processed
+    assert_equal %w[c d e], dlq.map(&:message)
+    assert_equal 3, dlq.size
+  end
+
+  def test_drain_block_non_standard_error_keeps_unprocessed_entries
+    dlq = TypedBus::DeadLetterQueue.new
+    %w[a b c].each { |m| dlq.push(make_delivery(m)) }
+    stop = Class.new(Exception) # not a StandardError, like Interrupt or Async::Stop
+
+    processed = []
+    assert_raises(stop) do
+      dlq.drain do |d|
+        raise stop if d.message == "b"
+
+        processed << d.message
+      end
+    end
+
+    # "b" was interrupted, so "b" and "c" stay queued, in order.
+    assert_equal %w[a], processed
+    assert_equal %w[b c], dlq.map(&:message)
+  end
+
+  def test_drain_block_break_puts_back_only_unyielded_entries
+    dlq = TypedBus::DeadLetterQueue.new
+    %w[a b c].each { |m| dlq.push(make_delivery(m)) }
+
+    processed = []
+    dlq.drain do |d|
+      processed << d.message
+      break if processed.size == 2
+    end
+
+    # "b" was handled before the break, so only "c" goes back.
+    assert_equal %w[a b], processed
+    assert_equal %w[c], dlq.map(&:message)
+  end
+
+  # Raise once a drain block has run more than +limit+ times, so a
+  # drain that never ends fails the test instead of hanging the suite.
+  def guard_calls(calls, limit = 10)
+    raise "drain looped: #{calls} calls" if calls > limit
+  end
+
+  def test_drain_block_pushing_entry_back_yields_it_once
+    dlq = TypedBus::DeadLetterQueue.new
+    dlq.push(make_delivery("a"))
+
+    calls = 0
+    drained = Timeout.timeout(1) do
+      dlq.drain do |d|
+        guard_calls(calls += 1)
+        dlq.push(d)
+      end
+    end
+
+    assert_equal 1, calls
+    assert_equal %w[a], drained.map(&:message)
+    assert_equal %w[a], dlq.map(&:message)
+  end
+
+  def test_drain_block_calling_clear_returns_all_entries
+    dlq = TypedBus::DeadLetterQueue.new
+    %w[a b].each { |m| dlq.push(make_delivery(m)) }
+
+    yielded = []
+    drained = Timeout.timeout(1) do
+      dlq.drain do |d|
+        guard_calls(yielded.size)
+        yielded << d.message
+        dlq.clear!
+      end
+    end
+
+    assert_equal %w[a b], yielded
+    assert_equal %w[a b], drained.map(&:message)
+    assert dlq.empty?
+  end
+
+  def test_drain_block_raise_restores_unprocessed_ahead_of_new_entries
+    dlq = TypedBus::DeadLetterQueue.new
+    %w[a b c].each { |m| dlq.push(make_delivery(m)) }
+
+    assert_raises(RuntimeError) do
+      dlq.drain do |d|
+        dlq.push(make_delivery("new"))
+        raise "boom" if d.message == "b"
+      end
+    end
+
+    assert_equal %w[b c new new], dlq.map(&:message)
+  end
+
+  def test_drain_block_republishing_without_subscribers_runs_once
+    Sync do
+      channel = TypedBus::Channel.new(:retry, timeout: nil)
+      channel.publish("m")
+      assert_equal 1, channel.dead_letter_queue.size
+
+      calls = 0
+      channel.dead_letter_queue.drain do |d|
+        guard_calls(calls += 1)
+        channel.publish(d.message)
+      end
+
+      assert_equal 1, calls
+      assert_equal %w[m], channel.dead_letter_queue.map(&:message)
+    end
   end
 
   def test_clear_empties_queue
@@ -115,6 +241,39 @@ class DeadLetterQueueTest < Minitest::Test
     dlq.push(make_delivery("fail"))
 
     assert_match(/entry added/, log_output.string)
+  ensure
+    TypedBus.logger = original
+  end
+
+  def test_logs_timeout_reason_for_timed_out_delivery
+    log_output = StringIO.new
+    original = TypedBus.logger
+    TypedBus.logger = Logger.new(log_output)
+
+    dlq = TypedBus::DeadLetterQueue.new
+    Async do
+      delivery = TypedBus::Delivery.new(
+        "late", channel_name: :test, subscriber_id: 1, timeout: 0.01,
+        on_nack: ->(_id) {}
+      )
+      sleep(0.05)
+      assert delivery.timed_out?
+      dlq.push(delivery)
+    end
+
+    assert_match(/entry added .*reason=timeout/, log_output.string)
+  ensure
+    TypedBus.logger = original
+  end
+
+  def test_clear_on_empty_queue_logs_nothing
+    log_output = StringIO.new
+    original = TypedBus.logger
+    TypedBus.logger = Logger.new(log_output)
+
+    TypedBus::DeadLetterQueue.new.clear!
+
+    assert_empty log_output.string
   ensure
     TypedBus.logger = original
   end

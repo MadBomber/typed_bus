@@ -13,18 +13,20 @@ module TypedBus
     attr_reader :name, :type, :dead_letter_queue
 
     # @param name [Symbol] channel name
-    # @param type [Class, nil] optional type constraint for messages
-    # @param timeout [Numeric] seconds before delivery auto-nacks (default: 30)
-    # @param max_pending [Integer, nil] backpressure limit (nil = unbounded)
+    # @param type [Class, Module, nil] optional type constraint for messages
+    # @param timeout [Numeric, nil] seconds before delivery auto-nacks (default: 30); nil = never auto-nack
+    # @param max_pending [Integer, nil] backpressure limit; a positive Integer or nil (unbounded)
     # @param stats [Stats, nil] optional stats tracker for counters
-    # @param throttle [Float] capacity ratio (0.0..1.0) at which asymptotic backoff begins (0.0 = disabled)
+    # @param throttle [Numeric, nil] remaining-capacity ratio at which asymptotic backoff begins;
+    #   0 or nil = off, else strictly between 0 and 1
+    # @raise [ArgumentError] if type, max_pending, or throttle is invalid
     def initialize(name, type: nil, timeout: 30, max_pending: nil, stats: nil, throttle: 0.0)
       @name              = name
       @type              = type
       @timeout           = timeout
       @max_pending       = max_pending
       @stats             = stats
-      @throttle          = throttle.to_f
+      @throttle          = Configuration.validate_throttle!(throttle, " on channel :#{name}").to_f
       @subscribers       = {}
       @next_subscriber_id = 0
       @pending_deliveries = {}
@@ -33,9 +35,11 @@ module TypedBus
       @dead_letter_queue = DeadLetterQueue.new
       @backpressure      = Async::Condition.new
 
+      validate_type_config!
+      Configuration.validate_max_pending!(@max_pending)
       validate_throttle_config!
 
-      log(:info, "channel created (type=#{type || 'any'}, timeout=#{timeout}s, max_pending=#{max_pending || 'unbounded'}, throttle=#{@throttle > 0 ? "#{(@throttle * 100).round}%" : 'off'})")
+      log(:info, "channel created (type=#{type || 'any'}, timeout=#{timeout ? "#{timeout}s" : 'none'}, max_pending=#{max_pending || 'unbounded'}, throttle=#{@throttle > 0 ? "#{(@throttle * 100).round}%" : 'off'})")
     end
 
     # Publish a message to all current subscribers.
@@ -44,16 +48,22 @@ module TypedBus
     #
     # @param message [Object]
     # @raise [ArgumentError] if message doesn't match type constraint
-    # @raise [RuntimeError] if channel is closed
-    # @return [DeliveryTracker] the tracker for this message
+    # @raise [RuntimeError] if channel is closed, including while the
+    #   publisher was waiting on throttle or backpressure
+    # @return [DeliveryTracker, nil] the tracker, or nil when there are no
+    #   subscribers and the message was dead-lettered
     def publish(message)
-      raise "Channel :#{@name} is closed" if @closed
+      ensure_open!
 
       validate_type!(message)
       apply_throttle! if throttled?
       wait_for_capacity if bounded?
+      ensure_open! # the channel may have closed while we waited
 
-      subscriber_ids = @subscribers.keys
+      # Snapshot ids and handlers together so every id the tracker waits on
+      # gets a Delivery, even if a handler unsubscribes someone mid-publish.
+      subscribers    = @subscribers.to_a
+      subscriber_ids = subscribers.map(&:first)
 
       if subscriber_ids.empty?
         log(:warn, "published with no subscribers, routing to DLQ (message=#{message.class})")
@@ -69,10 +79,7 @@ module TypedBus
       tracker.on_complete { record_stat(:delivered) }
       tracker.on_resolved { tracker_resolved(tracker) }
 
-      subscriber_ids.each do |sub_id|
-        handler = @subscribers[sub_id]
-        next unless handler
-
+      subscribers.each do |sub_id, handler|
         delivery = Delivery.new(
           message,
           channel_name: @name,
@@ -85,17 +92,23 @@ module TypedBus
           on_nack: ->(_id) {
             @active_deliveries.delete(delivery)
             tracker.nack(sub_id)
-            @dead_letter_queue.push(delivery)
+            # Count before pushing: the DLQ runs a user callback that may raise.
             record_stat(:dead_lettered)
-            if delivery.timed_out?
-              record_stat(:timed_out)
-            else
-              record_stat(:nacked)
-            end
+            record_stat(delivery.timed_out? ? :timed_out : :nacked)
+            @dead_letter_queue.push(delivery)
           }
         )
 
         @active_deliveries << delivery
+
+        # An earlier handler may have closed the channel mid-fan-out. close
+        # only force-nacks deliveries that already exist, so dead-letter
+        # this one the same way instead of dispatching it.
+        if @closed
+          delivery.nack!
+          next
+        end
+
         log(:debug, "notifying subscriber ##{sub_id} (message=#{message.class})")
 
         Async do
@@ -112,9 +125,12 @@ module TypedBus
     # Subscribe to messages on this channel.
     # The block receives a +Delivery+ object.
     #
+    # @raise [ArgumentError] if no block is given
+    # @raise [RuntimeError] if channel is closed
     # @return [Integer] subscriber id (use for unsubscribe)
     def subscribe(&block)
-      raise "Channel :#{@name} is closed" if @closed
+      raise ArgumentError, "Channel :#{@name} subscribe requires a block" unless block
+      ensure_open!
 
       id = next_subscriber_id
       @subscribers[id] = block
@@ -154,6 +170,8 @@ module TypedBus
 
     # Close the channel. Stops accepting new publishes/subscribes.
     # Pending deliveries are force-nacked (routed to DLQ with stats).
+    # Publishers waiting for capacity are always woken and raise the
+    # closed error, even if an on_dead_letter callback raises here.
     def close
       return if @closed
 
@@ -161,6 +179,7 @@ module TypedBus
       pending = @active_deliveries.count(&:pending?)
       log(:info, "closing (force-nacking #{pending} pending deliveries)")
       force_nack_pending
+    ensure
       @backpressure.signal
     end
 
@@ -180,16 +199,21 @@ module TypedBus
 
     private
 
+    def ensure_open!
+      raise "Channel :#{@name} is closed" if @closed
+    end
+
+    def validate_type_config!
+      return if @type.nil? || @type.is_a?(Module)
+
+      raise ArgumentError, "type must be a Class or Module, got #{@type.inspect} on channel :#{@name}"
+    end
+
+    # The range is checked by Configuration.validate_throttle! in #initialize.
     def validate_throttle_config!
-      return if @throttle == 0.0
+      return if @throttle == 0.0 || bounded?
 
-      unless bounded?
-        raise ArgumentError, "throttle requires max_pending on channel :#{@name}"
-      end
-
-      unless @throttle > 0.0 && @throttle < 1.0
-        raise ArgumentError, "throttle must be between 0.0 and 1.0 (exclusive), got #{@throttle} on channel :#{@name}"
-      end
+      raise ArgumentError, "throttle requires max_pending on channel :#{@name}"
     end
 
     def throttled?
@@ -199,6 +223,9 @@ module TypedBus
     def apply_throttle!
       remaining_ratio = (@max_pending - @pending_deliveries.size).to_f / @max_pending
       return if remaining_ratio > @throttle
+      # At or over capacity the delay would be infinite; let backpressure
+      # (wait_for_capacity) do the blocking instead of sleeping forever.
+      return if remaining_ratio <= 0.0
 
       effective_rate = @max_pending * remaining_ratio
       delay = 1.0 / effective_rate
@@ -220,6 +247,8 @@ module TypedBus
     end
 
     def wait_for_capacity
+      return if @pending_deliveries.size < @max_pending
+
       log(:debug, "backpressure: waiting for capacity (pending=#{@pending_deliveries.size}, max=#{@max_pending})")
       while @pending_deliveries.size >= @max_pending && !@closed
         @backpressure.wait
@@ -241,9 +270,9 @@ module TypedBus
     def dead_letter_no_subscribers(message)
       delivery = Delivery.new(message, channel_name: @name, subscriber_id: -1)
       delivery.nack!
-      @dead_letter_queue.push(delivery)
       record_stat(:nacked)
       record_stat(:dead_lettered)
+      @dead_letter_queue.push(delivery)
     end
 
     def record_stat(suffix)

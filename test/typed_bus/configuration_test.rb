@@ -80,6 +80,23 @@ class ConfigurationTest < Minitest::Test
     assert_equal Logger::ERROR, @config.log_level
   end
 
+  def test_invalid_log_level_with_logger_leaves_state_unchanged
+    logger = Logger.new(StringIO.new)
+    @config.logger = logger
+
+    assert_raises(ArgumentError) { @config.log_level = :verbose }
+    assert_equal Logger::INFO, @config.log_level
+    assert_equal Logger::INFO, logger.level
+  end
+
+  def test_invalid_log_level_without_logger_raises_at_assignment
+    assert_raises(ArgumentError) { @config.log_level = :verbose }
+    assert_equal Logger::INFO, @config.log_level
+
+    @config.logger = Logger.new(StringIO.new)
+    assert_equal Logger::INFO, @config.logger.level
+  end
+
   # --- dup independence ---
 
   def test_dup_creates_independent_copy
@@ -143,5 +160,54 @@ class ConfigurationTest < Minitest::Test
 
   def test_defaults_frozen
     assert TypedBus::Configuration::DEFAULTS.frozen?
+  end
+
+  # --- max_pending validation ---
+
+  def test_max_pending_accepts_positive_integer_and_nil
+    @config.max_pending = 5
+    assert_equal 5, @config.max_pending
+
+    @config.max_pending = nil
+    assert_nil @config.max_pending
+  end
+
+  def test_max_pending_rejects_zero_negative_and_non_integer
+    [0, -1, 2.5, "10"].each do |bad|
+      error = assert_raises(ArgumentError) { @config.max_pending = bad }
+      assert_match(/max_pending must be nil or a positive Integer/, error.message)
+    end
+    assert_nil @config.max_pending
+  end
+
+  def test_validate_max_pending_returns_valid_value
+    assert_equal 3, TypedBus::Configuration.validate_max_pending!(3)
+    assert_nil TypedBus::Configuration.validate_max_pending!(nil)
+  end
+
+  # --- throttle validation ---
+
+  def test_throttle_setter_rejects_out_of_range_and_non_numeric
+    [1.0, 1.5, -3, -0.1, "fast", :half, Float::NAN, Complex(0.5, 1)].each do |bad|
+      error = assert_raises(ArgumentError, "expected #{bad.inspect} to be rejected") { @config.throttle = bad }
+      assert_includes error.message, "throttle must be 0 (off) or between 0.0 and 1.0 (exclusive)"
+    end
+    assert_equal 0.0, @config.throttle
+  end
+
+  def test_throttle_setter_accepts_off_and_in_range_values
+    [nil, 0, 0.0, 0.5, Rational(1, 4)].each do |good|
+      @config.throttle = good
+      if good.nil?
+        assert_nil @config.throttle
+      else
+        assert_equal good, @config.throttle
+      end
+    end
+  end
+
+  def test_validate_throttle_appends_context
+    error = assert_raises(ArgumentError) { TypedBus::Configuration.validate_throttle!(2, " on channel :x") }
+    assert_equal "throttle must be 0 (off) or between 0.0 and 1.0 (exclusive), got 2 on channel :x", error.message
   end
 end

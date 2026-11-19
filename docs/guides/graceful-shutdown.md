@@ -13,7 +13,9 @@ channel.closed?  # => true
 
 After closing:
 
-- `publish` raises `RuntimeError`
+- `publish` raises `RuntimeError`, including for publishers that were already
+  waiting on `max_pending` or throttle when `close` ran: they wake up and raise
+  `Channel :name is closed` instead of delivering
 - `subscribe` raises `RuntimeError`
 - The DLQ retains its entries for inspection
 

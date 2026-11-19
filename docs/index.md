@@ -4,7 +4,7 @@
 <table>
 <tr>
 <td width="50%" align="center" valign="top">
-<img src="assets/images/typed_bus.gif" alt="TypedBus" width="875"><br>
+<img src="assets/images/typed_bus.png" alt="TypedBus" width="875"><br>
 <a href="https://github.com/madbomber/typed_bus">GitHub Repository</a>
 </td>
 <td width="50%" valign="top">
@@ -50,7 +50,8 @@ end
 
 - Ruby >= 3.2.0
 - [async](https://github.com/socketry/async) ~> 2.0
+- [logger](https://github.com/ruby/logger)
 
 ## License
 
-MIT
+[MIT](https://github.com/MadBomber/typed_bus/blob/develop/LICENSE)

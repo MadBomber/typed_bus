@@ -8,12 +8,16 @@ For each channel named `:orders`, the following counters are tracked:
 
 | Counter | Description |
 |---------|-------------|
-| `:orders_published` | Messages published |
+| `:orders_published` | Messages `MessageBus#publish` accepted (a publish to an already-closed channel or with the wrong type raises and is not counted) |
 | `:orders_delivered` | All subscribers ACKed (message fully delivered) |
-| `:orders_nacked` | Explicit nacks by subscribers |
+| `:orders_nacked` | Nacks of any cause: `nack!`, a raising handler, `close`, or a publish with no subscribers (timeouts are counted separately) |
 | `:orders_timed_out` | Delivery timeouts (auto-nack) |
 | `:orders_dead_lettered` | Entries added to the DLQ |
 | `:orders_throttled` | Publishes that were rate-limited |
+
+`published` and `delivered` count once per message. `nacked`, `timed_out` and
+`dead_lettered` count once per subscriber delivery, so one publish to a channel
+with three subscribers can add up to 3 to each of them.
 
 ## Reading Stats
 
@@ -61,15 +65,18 @@ stats[:work_published]  # => N
 
 ## Monitoring Pattern
 
-Combine stats with DLQ callbacks for real-time alerting:
+Combine stats with DLQ callbacks for real-time alerting. Because
+`dead_lettered` counts per subscriber delivery and `published` counts per
+message, their ratio is dead letters per publish, which can exceed 1 when a
+channel has several subscribers:
 
 ```ruby
 bus.add_channel(:orders, timeout: 10)
 
 bus.dead_letters(:orders).on_dead_letter do |delivery|
-  error_rate = bus.stats[:orders_dead_lettered].to_f / bus.stats[:orders_published]
-  if error_rate > 0.1
-    alert("Orders DLQ error rate above 10%: #{(error_rate * 100).round}%")
+  per_publish = bus.stats[:orders_dead_lettered].to_f / bus.stats[:orders_published]
+  if per_publish > 0.1
+    alert("Orders dead letters per publish above 0.1: #{per_publish.round(2)}")
   end
 end
 ```

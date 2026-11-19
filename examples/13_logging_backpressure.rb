@@ -12,7 +12,6 @@ require "logger"
 require_relative "../lib/typed_bus"
 
 logger = Logger.new($stdout)
-logger.level = Logger::DEBUG
 logger.formatter = proc do |severity, datetime, _progname, msg|
   timestamp = datetime.strftime("%H:%M:%S.%L")
   color = case severity
@@ -25,7 +24,12 @@ logger.formatter = proc do |severity, datetime, _progname, msg|
   "#{color}#{timestamp} [#{severity.ljust(5)}]\e[0m #{msg}\n"
 end
 
-TypedBus.logger = logger
+# Assigning a logger applies the configured log_level (INFO by default),
+# so set DEBUG through the configuration rather than on the logger itself.
+TypedBus.configure do |config|
+  config.logger    = logger
+  config.log_level = Logger::DEBUG
+end
 
 channel = TypedBus::Channel.new(
   :pipeline,

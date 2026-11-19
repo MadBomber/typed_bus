@@ -8,6 +8,14 @@ class DeliveryTest < Minitest::Test
     TypedBus::Delivery.new("payload", **defaults.merge(opts))
   end
 
+  # Runs the block in a fresh reactor and returns how long the reactor took
+  # to finish. A live timeout task keeps the reactor open until it fires.
+  def measure_reactor(&block)
+    start = Process.clock_gettime(Process::CLOCK_MONOTONIC)
+    Async(&block).wait
+    Process.clock_gettime(Process::CLOCK_MONOTONIC) - start
+  end
+
   def test_starts_pending
     d = make_delivery
     assert d.pending?
@@ -83,12 +91,13 @@ class DeliveryTest < Minitest::Test
   end
 
   def test_ack_before_timeout_cancels_timer
-    Async do
-      d = make_delivery(timeout: 0.05)
+    d = nil
+    elapsed = measure_reactor do
+      d = make_delivery(timeout: 2)
       d.ack!
-      sleep(0.1)
-      assert d.acked?
     end
+    assert d.acked?
+    assert_operator elapsed, :<, 0.5, "ack! must stop the timeout task so the reactor can exit"
   end
 
   def test_timed_out_flag
@@ -108,16 +117,16 @@ class DeliveryTest < Minitest::Test
   end
 
   def test_nack_cancels_timeout_task
-    Async do
-      nack_count = 0
+    nack_count = 0
+    elapsed = measure_reactor do
       d = make_delivery(
-        timeout: 0.05,
+        timeout: 2,
         on_nack: ->(_id) { nack_count += 1 }
       )
       d.nack!
-      sleep(0.1) # wait past timeout
-      assert_equal 1, nack_count, "on_nack should fire only once — nack! must cancel timeout"
     end
+    assert_equal 1, nack_count
+    assert_operator elapsed, :<, 0.5, "nack! must stop the timeout task so the reactor can exit"
   end
 
   def test_cancel_timeout_without_timeout_is_noop

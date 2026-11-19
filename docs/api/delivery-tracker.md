@@ -53,6 +53,8 @@ Number of subscribers still pending.
 
 ## Callbacks
 
+Each method adds a callback; registering another one does not replace the earlier ones. Callbacks for an event run in registration order. `Channel#publish` registers its own `on_complete` and `on_resolved` bookkeeping first, so hooks you add to the returned tracker run after the channel has recorded stats and released capacity.
+
 ### `on_complete { ... }`
 
 Called when all subscribers have resolved and every one ACKed (successful delivery).

@@ -11,11 +11,13 @@ A named, typed pub/sub channel with explicit acknowledgment tracking.
 | Parameter | Default | Description |
 |-----------|---------|-------------|
 | `name` | required | `Symbol` channel name |
-| `type` | `nil` | Optional class constraint for messages |
-| `timeout` | `30` | Seconds before delivery auto-nacks |
-| `max_pending` | `nil` | Backpressure limit; `nil` = unbounded |
+| `type` | `nil` | Optional `Class` or `Module` constraint for messages |
+| `timeout` | `30` | Seconds before delivery auto-nacks; `nil` = never auto-nack |
+| `max_pending` | `nil` | Backpressure limit (positive `Integer`); `nil` = unbounded |
 | `stats` | `nil` | Optional `Stats` instance for counters |
-| `throttle` | `0.0` | Capacity ratio where backoff begins |
+| `throttle` | `0.0` | Capacity ratio where backoff begins; `0` or `nil` = off, else strictly between 0 and 1 |
+
+**Raises:** `ArgumentError` if `type` is not `nil`, a `Class`, or a `Module`; if `max_pending` is not `nil` or a positive `Integer`; if `throttle` is out of range; or if `throttle` is set without `max_pending`.
 
 ```ruby
 channel = TypedBus::Channel.new(:orders,
@@ -59,7 +61,7 @@ Publish a message to all current subscribers.
 
 Subscribe to messages. Returns the subscriber ID.
 
-**Raises:** `RuntimeError` if closed.
+**Raises:** `ArgumentError` if no block is given. `RuntimeError` if closed.
 
 ### `unsubscribe(id_or_block)`
 

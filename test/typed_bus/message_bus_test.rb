@@ -36,6 +36,19 @@ class MessageBusTest < Minitest::Test
     assert_match(/Unknown channel/, error.message)
   end
 
+  def test_unknown_channel_error_shows_name_and_registered_channels
+    @bus.add_channel(:orders)
+    @bus.add_channel(:payments)
+
+    error = assert_raises(ArgumentError) { @bus.publish("orders", "x") }
+    assert_equal 'Unknown channel: "orders" (registered: :orders, :payments)', error.message
+  end
+
+  def test_unknown_channel_error_on_empty_bus
+    error = assert_raises(ArgumentError) { @bus.publish(:orders, "x") }
+    assert_equal "Unknown channel: :orders (no channels registered)", error.message
+  end
+
   def test_publish_tracks_stats_per_channel
     @bus.add_channel(:events, timeout: 1)
     @bus.subscribe(:events) { |d| d.ack! }
@@ -77,10 +90,11 @@ class MessageBusTest < Minitest::Test
   end
 
   def test_remove_channel_closes_and_removes
-    @bus.add_channel(:temp)
+    channel = @bus.add_channel(:temp)
     @bus.remove_channel(:temp)
 
     refute @bus.channel?(:temp)
+    assert channel.closed?
   end
 
   def test_clear_resets_channels_and_stats
@@ -101,11 +115,27 @@ class MessageBusTest < Minitest::Test
     assert_equal 1, dlq.size
   end
 
+  def test_publish_returns_tracker_or_nil_without_subscribers
+    @bus.add_channel(:empty)
+    @bus.add_channel(:busy, timeout: 1)
+    @bus.subscribe(:busy) { |d| d.ack! }
+
+    results = {}
+    Async do
+      results[:empty] = @bus.publish(:empty, "orphan")
+      results[:busy]  = @bus.publish(:busy, "msg")
+    end
+
+    assert_nil results[:empty]
+    assert_instance_of TypedBus::DeliveryTracker, results[:busy]
+  end
+
   def test_close_channel
     @bus.add_channel(:q)
     @bus.close(:q)
 
     assert_raises(RuntimeError) { @bus.publish(:q, "nope") }
+    assert_equal 0, @bus.stats[:q_published]
   end
 
   def test_close_all
@@ -115,6 +145,8 @@ class MessageBusTest < Minitest::Test
 
     assert_raises(RuntimeError) { @bus.publish(:a, "nope") }
     assert_raises(RuntimeError) { @bus.publish(:b, "nope") }
+    assert_equal 0, @bus.stats[:a_published]
+    assert_equal 0, @bus.stats[:b_published]
   end
 
   def test_pending_count
@@ -171,6 +203,16 @@ class MessageBusTest < Minitest::Test
     assert_equal 1, @bus.stats[:q_dead_lettered]
   end
 
+  def test_stats_published_counted_before_dead_letter_callback_runs
+    @bus.add_channel(:q, timeout: 1)
+    seen = nil
+    @bus.dead_letters(:q).on_dead_letter { |_d| seen = @bus.stats[:q_published] }
+
+    Async { @bus.publish(:q, "orphan") } # no subscribers
+
+    assert_equal 1, seen
+  end
+
   # --- Default throttle ---
 
   def test_default_throttle_applied_to_channels
@@ -205,6 +247,12 @@ class MessageBusTest < Minitest::Test
   def test_subscribe_raises_on_unknown_channel
     error = assert_raises(ArgumentError) { @bus.subscribe(:nope) { |d| d.ack! } }
     assert_match(/Unknown channel/, error.message)
+  end
+
+  def test_subscribe_without_block_raises
+    @bus.add_channel(:blockless)
+    error = assert_raises(ArgumentError) { @bus.subscribe(:blockless) }
+    assert_match(/requires a block/, error.message)
   end
 
   def test_unsubscribe_raises_on_unknown_channel
@@ -280,7 +328,14 @@ class MessageBusTest < Minitest::Test
 
   def test_close_all_on_empty_bus
     bus = TypedBus::MessageBus.new
-    bus.close_all  # should not raise
+    bus.close_all
+
+    bus.add_channel(:later)
+    received = []
+    bus.subscribe(:later) { |d| received << d.message; d.ack! }
+    Async { bus.publish(:later, "still open") }
+
+    assert_equal ["still open"], received
   end
 
   # --- clear on empty bus ---
@@ -308,6 +363,7 @@ class MessageBusTest < Minitest::Test
 
     error = assert_raises(ArgumentError) { @bus.publish(:typed, 42) }
     assert_match(/Expected String/, error.message)
+    assert_equal 0, @bus.stats[:typed_published]
   end
 
   def test_logging_when_logger_set
@@ -321,7 +377,60 @@ class MessageBusTest < Minitest::Test
     Async { bus.publish(:logged, "msg") }
 
     assert_match(/message bus initialized/, log_output.string)
-    assert_match(/adding channel/, log_output.string)
+    assert_match(/added channel :logged/, log_output.string)
+  ensure
+    TypedBus.logger = original
+  end
+
+  # --- max_pending validation ---
+
+  def test_bus_rejects_invalid_max_pending
+    assert_raises(ArgumentError) { TypedBus::MessageBus.new(max_pending: 0) }
+    assert_raises(ArgumentError) { TypedBus::MessageBus.new(max_pending: -1) }
+  end
+
+  def test_add_channel_rejects_invalid_max_pending
+    assert_raises(ArgumentError) { @bus.add_channel(:bad, max_pending: 0) }
+    refute @bus.channel?(:bad)
+  end
+
+  # --- throttle and type validation ---
+
+  def test_bus_rejects_invalid_throttle_at_construction
+    assert_raises(ArgumentError) { TypedBus::MessageBus.new(throttle: 1.5, max_pending: 10) }
+    assert_raises(ArgumentError) { TypedBus::MessageBus.new(throttle: "fast", max_pending: 5) }
+  end
+
+  def test_add_channel_rejects_non_numeric_throttle
+    assert_raises(ArgumentError) { @bus.add_channel(:bad, max_pending: 5, throttle: "fast") }
+    refute @bus.channel?(:bad)
+  end
+
+  def test_add_channel_rejects_non_class_type
+    assert_raises(ArgumentError) { @bus.add_channel(:bad, type: "Order") }
+    refute @bus.channel?(:bad)
+  end
+
+  def test_rejected_add_channel_logs_no_added_line
+    original = TypedBus.logger
+    output = StringIO.new
+    TypedBus.logger = Logger.new(output)
+
+    assert_raises(ArgumentError) { @bus.add_channel(:bad, type: "Order") }
+
+    refute_match(/add(ed|ing) channel :bad/, output.string)
+    refute @bus.channel?(:bad)
+  ensure
+    TypedBus.logger = original
+  end
+
+  def test_add_channel_logs_nil_timeout_as_none
+    original = TypedBus.logger
+    output = StringIO.new
+    TypedBus.logger = Logger.new(output)
+    @bus.add_channel(:forever, timeout: nil)
+
+    assert_includes output.string, "added channel :forever (type=any, timeout=none,"
   ensure
     TypedBus.logger = original
   end

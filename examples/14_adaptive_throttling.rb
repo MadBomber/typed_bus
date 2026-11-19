@@ -3,7 +3,8 @@
 
 # 14 — Adaptive Rate Limiting (Throttle)
 #
-# Demonstrates asymptotic backoff using throttle: Float.
+# Demonstrates asymptotic backoff using throttle: (a ratio strictly between 0 and 1;
+# 0 or nil turns it off).
 # The value is the remaining-capacity ratio at which backoff begins.
 # Below that threshold, each publish sleeps for
 # 1 / (max_pending * remaining_ratio) seconds — progressively slower
@@ -22,7 +23,6 @@ require "logger"
 require_relative "../lib/typed_bus"
 
 logger = Logger.new($stdout)
-logger.level = Logger::DEBUG
 logger.formatter = proc do |severity, datetime, _progname, msg|
   timestamp = datetime.strftime("%H:%M:%S.%L")
   color = case severity
@@ -35,7 +35,12 @@ logger.formatter = proc do |severity, datetime, _progname, msg|
   "#{color}#{timestamp} [#{severity.ljust(5)}]\e[0m #{msg}\n"
 end
 
-TypedBus.logger = logger
+# Assigning a logger applies the configured log_level (INFO by default),
+# so set DEBUG through the configuration rather than on the logger itself.
+TypedBus.configure do |config|
+  config.logger    = logger
+  config.log_level = Logger::DEBUG
+end
 
 # --- Example 1: Channel-level throttle ---
 
