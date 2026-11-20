@@ -24,7 +24,10 @@ class MessageBusTest < Minitest::Test
   def test_publish_and_subscribe_deliver_messages
     @bus.add_channel(:queue, timeout: 1)
     received = []
-    @bus.subscribe(:queue) { |d| received << d.message; d.ack! }
+    @bus.subscribe(:queue) do |d|
+      received << d.message
+      d.ack!
+    end
 
     Async { @bus.publish(:queue, "hello") }
 
@@ -51,7 +54,7 @@ class MessageBusTest < Minitest::Test
 
   def test_publish_tracks_stats_per_channel
     @bus.add_channel(:events, timeout: 1)
-    @bus.subscribe(:events) { |d| d.ack! }
+    @bus.subscribe(:events, &:ack!)
 
     Async do
       @bus.publish(:events, "a")
@@ -67,8 +70,14 @@ class MessageBusTest < Minitest::Test
 
     a_msgs = []
     b_msgs = []
-    @bus.subscribe(:a) { |d| a_msgs << d.message; d.ack! }
-    @bus.subscribe(:b) { |d| b_msgs << d.message; d.ack! }
+    @bus.subscribe(:a) do |d|
+      a_msgs << d.message
+      d.ack!
+    end
+    @bus.subscribe(:b) do |d|
+      b_msgs << d.message
+      d.ack!
+    end
 
     Async do
       @bus.publish(:a, "x")
@@ -99,7 +108,7 @@ class MessageBusTest < Minitest::Test
 
   def test_clear_resets_channels_and_stats
     @bus.add_channel(:q, timeout: 1)
-    @bus.subscribe(:q) { |d| d.ack! }
+    @bus.subscribe(:q, &:ack!)
     Async { @bus.publish(:q, "msg") }
     @bus.clear!
 
@@ -118,7 +127,7 @@ class MessageBusTest < Minitest::Test
   def test_publish_returns_tracker_or_nil_without_subscribers
     @bus.add_channel(:empty)
     @bus.add_channel(:busy, timeout: 1)
-    @bus.subscribe(:busy) { |d| d.ack! }
+    @bus.subscribe(:busy, &:ack!)
 
     results = {}
     Async do
@@ -163,8 +172,8 @@ class MessageBusTest < Minitest::Test
 
   def test_stats_delivered_when_all_ack
     @bus.add_channel(:q, timeout: 1)
-    @bus.subscribe(:q) { |d| d.ack! }
-    @bus.subscribe(:q) { |d| d.ack! }
+    @bus.subscribe(:q, &:ack!)
+    @bus.subscribe(:q, &:ack!)
 
     Async { @bus.publish(:q, "msg") }
 
@@ -174,7 +183,7 @@ class MessageBusTest < Minitest::Test
 
   def test_stats_nacked_on_explicit_nack
     @bus.add_channel(:q, timeout: 1)
-    @bus.subscribe(:q) { |d| d.nack! }
+    @bus.subscribe(:q, &:nack!)
 
     Async { @bus.publish(:q, "rejected") }
 
@@ -218,7 +227,7 @@ class MessageBusTest < Minitest::Test
   def test_default_throttle_applied_to_channels
     bus = TypedBus::MessageBus.new(throttle: 0.5)
     bus.add_channel(:orders, max_pending: 100, timeout: 1)
-    bus.subscribe(:orders) { |d| d.ack! }
+    bus.subscribe(:orders, &:ack!)
     Async { bus.publish(:orders, "msg") }
 
     assert_equal 1, bus.stats[:orders_published]
@@ -227,7 +236,7 @@ class MessageBusTest < Minitest::Test
   def test_channel_can_override_default_throttle
     bus = TypedBus::MessageBus.new(throttle: 0.5)
     bus.add_channel(:fast, max_pending: 200, timeout: 1, throttle: 0.0)
-    bus.subscribe(:fast) { |d| d.ack! }
+    bus.subscribe(:fast, &:ack!)
     Async { bus.publish(:fast, "msg") }
 
     assert_equal 1, bus.stats[:fast_published]
@@ -236,7 +245,7 @@ class MessageBusTest < Minitest::Test
   def test_bus_without_default_throttle_channels_have_no_throttle
     bus = TypedBus::MessageBus.new
     bus.add_channel(:plain, timeout: 1)
-    bus.subscribe(:plain) { |d| d.ack! }
+    bus.subscribe(:plain, &:ack!)
     Async { bus.publish(:plain, "msg") }
 
     assert_equal 1, bus.stats[:plain_published]
@@ -245,7 +254,7 @@ class MessageBusTest < Minitest::Test
   # --- Unknown channel errors for all methods ---
 
   def test_subscribe_raises_on_unknown_channel
-    error = assert_raises(ArgumentError) { @bus.subscribe(:nope) { |d| d.ack! } }
+    error = assert_raises(ArgumentError) { @bus.subscribe(:nope, &:ack!) }
     assert_match(/Unknown channel/, error.message)
   end
 
@@ -313,7 +322,10 @@ class MessageBusTest < Minitest::Test
   def test_unsubscribe_passthrough
     @bus.add_channel(:q, timeout: 1)
     received = []
-    id = @bus.subscribe(:q) { |d| received << d.message; d.ack! }
+    id = @bus.subscribe(:q) do |d|
+      received << d.message
+      d.ack!
+    end
 
     Async { @bus.publish(:q, "before") }
 
@@ -362,7 +374,10 @@ class MessageBusTest < Minitest::Test
 
     bus.add_channel(:later)
     received = []
-    bus.subscribe(:later) { |d| received << d.message; d.ack! }
+    bus.subscribe(:later) do |d|
+      received << d.message
+      d.ack!
+    end
     Async { bus.publish(:later, "still open") }
 
     assert_equal ["still open"], received
@@ -389,7 +404,7 @@ class MessageBusTest < Minitest::Test
 
   def test_typed_channel_via_bus
     @bus.add_channel(:typed, type: String, timeout: 1)
-    @bus.subscribe(:typed) { |d| d.ack! }
+    @bus.subscribe(:typed, &:ack!)
 
     error = assert_raises(ArgumentError) { @bus.publish(:typed, 42) }
     assert_match(/Expected String/, error.message)
@@ -403,7 +418,7 @@ class MessageBusTest < Minitest::Test
 
     bus = TypedBus::MessageBus.new
     bus.add_channel(:logged, timeout: 1)
-    bus.subscribe(:logged) { |d| d.ack! }
+    bus.subscribe(:logged, &:ack!)
     Async { bus.publish(:logged, "msg") }
 
     assert_match(/message bus initialized/, log_output.string)

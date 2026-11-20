@@ -1,13 +1,14 @@
 # frozen_string_literal: true
 
+require 'English'
 require "test_helper"
 
 class ChannelTest < Minitest::Test
   TestEvent = Data.define(:name, :payload)
 
-  def make_channel(**opts)
+  def make_channel(**)
     defaults = { timeout: 0.1 }
-    TypedBus::Channel.new(:test, **defaults.merge(opts))
+    TypedBus::Channel.new(:test, **defaults, **)
   end
 
   # --- Type constraints ---
@@ -15,7 +16,10 @@ class ChannelTest < Minitest::Test
   def test_untyped_channel_accepts_any_message_type
     channel = make_channel
     received = []
-    channel.subscribe { |d| received << d.message; d.ack! }
+    channel.subscribe do |d|
+      received << d.message
+      d.ack!
+    end
 
     Async do
       channel.publish("hello")
@@ -29,7 +33,10 @@ class ChannelTest < Minitest::Test
   def test_typed_channel_accepts_correct_type
     channel = make_channel(type: TestEvent)
     received = []
-    channel.subscribe { |d| received << d.message; d.ack! }
+    channel.subscribe do |d|
+      received << d.message
+      d.ack!
+    end
 
     event = TestEvent.new(name: "test", payload: "data")
     Async { channel.publish(event) }
@@ -49,7 +56,10 @@ class ChannelTest < Minitest::Test
   def test_subscribe_receives_delivery_objects
     channel = make_channel
     deliveries = []
-    channel.subscribe { |d| deliveries << d; d.ack! }
+    channel.subscribe do |d|
+      deliveries << d
+      d.ack!
+    end
 
     Async { channel.publish("msg") }
 
@@ -62,8 +72,14 @@ class ChannelTest < Minitest::Test
     channel = make_channel
     a_msgs = []
     b_msgs = []
-    channel.subscribe { |d| a_msgs << d.message; d.ack! }
-    channel.subscribe { |d| b_msgs << d.message; d.ack! }
+    channel.subscribe do |d|
+      a_msgs << d.message
+      d.ack!
+    end
+    channel.subscribe do |d|
+      b_msgs << d.message
+      d.ack!
+    end
 
     Async { channel.publish("shared") }
 
@@ -98,7 +114,10 @@ class ChannelTest < Minitest::Test
   def test_unsubscribe_by_id
     channel = make_channel
     received = []
-    id = channel.subscribe { |d| received << d.message; d.ack! }
+    id = channel.subscribe do |d|
+      received << d.message
+      d.ack!
+    end
 
     Async { channel.publish("before") }
     channel.unsubscribe(id)
@@ -110,7 +129,10 @@ class ChannelTest < Minitest::Test
   def test_unsubscribe_by_block
     channel = make_channel
     received = []
-    handler = ->(d) { received << d.message; d.ack! }
+    handler = lambda { |d|
+      received << d.message
+      d.ack!
+    }
     channel.subscribe(&handler)
 
     Async { channel.publish("before") }
@@ -134,7 +156,7 @@ class ChannelTest < Minitest::Test
 
   def test_nacked_delivery_goes_to_dlq
     channel = make_channel
-    channel.subscribe { |d| d.nack! }
+    channel.subscribe(&:nack!)
 
     Async { channel.publish("rejected") }
 
@@ -188,7 +210,7 @@ class ChannelTest < Minitest::Test
   def test_closed_channel_rejects_subscribe
     channel = make_channel
     channel.close
-    assert_raises(RuntimeError) { channel.subscribe { |d| d.ack! } }
+    assert_raises(RuntimeError) { channel.subscribe(&:ack!) }
   end
 
   def test_subscribe_without_block_raises
@@ -257,7 +279,7 @@ class ChannelTest < Minitest::Test
     channel = make_channel
     assert_equal 0, channel.subscriber_count
 
-    id = channel.subscribe { |d| d.ack! }
+    id = channel.subscribe(&:ack!)
     assert_equal 1, channel.subscriber_count
 
     channel.unsubscribe(id)
@@ -268,7 +290,7 @@ class ChannelTest < Minitest::Test
 
   def test_tracker_removed_after_nack
     channel = make_channel(timeout: 1)
-    channel.subscribe { |d| d.nack! }
+    channel.subscribe(&:nack!)
 
     Async { channel.publish("rejected") }
 
@@ -335,7 +357,7 @@ class ChannelTest < Minitest::Test
       deliveries.first.ack!
       sleep(0.01)
 
-      assert_equal [:first_done, :second_done], publish_order
+      assert_equal %i[first_done second_done], publish_order
     end
   end
 
@@ -431,7 +453,10 @@ class ChannelTest < Minitest::Test
   def test_user_tracker_hooks_do_not_replace_channel_bookkeeping
     stats = TypedBus::Stats.new
     channel = TypedBus::Channel.new(:test, timeout: nil, max_pending: 1, stats: stats)
-    channel.subscribe { |d| sleep(0.01); d.ack! }
+    channel.subscribe do |d|
+      sleep(0.01)
+      d.ack!
+    end
 
     user_calls = []
     second = nil
@@ -458,7 +483,12 @@ class ChannelTest < Minitest::Test
     unbounded = make_channel(throttle: nil)
     bounded   = make_channel(throttle: nil, max_pending: 2)
     received = []
-    [unbounded, bounded].each { |ch| ch.subscribe { |d| received << d.message; d.ack! } }
+    [unbounded, bounded].each do |ch|
+      ch.subscribe do |d|
+        received << d.message
+        d.ack!
+      end
+    end
 
     Async do
       unbounded.publish("u")
@@ -521,7 +551,7 @@ class ChannelTest < Minitest::Test
 
   def test_publish_returns_delivery_tracker
     channel = make_channel
-    channel.subscribe { |d| d.ack! }
+    channel.subscribe(&:ack!)
 
     tracker = nil
     Async { tracker = channel.publish("msg") }
@@ -551,9 +581,9 @@ class ChannelTest < Minitest::Test
 
   def test_subscriber_count_after_multiple_adds_and_removes
     channel = make_channel
-    id1 = channel.subscribe { |d| d.ack! }
-    id2 = channel.subscribe { |d| d.ack! }
-    id3 = channel.subscribe { |d| d.ack! }
+    id1 = channel.subscribe(&:ack!)
+    id2 = channel.subscribe(&:ack!)
+    id3 = channel.subscribe(&:ack!)
     assert_equal 3, channel.subscriber_count
 
     channel.unsubscribe(id2)
@@ -568,9 +598,9 @@ class ChannelTest < Minitest::Test
 
   def test_subscribe_returns_incrementing_ids
     channel = make_channel
-    id1 = channel.subscribe { |d| d.ack! }
-    id2 = channel.subscribe { |d| d.ack! }
-    id3 = channel.subscribe { |d| d.ack! }
+    id1 = channel.subscribe(&:ack!)
+    id2 = channel.subscribe(&:ack!)
+    id3 = channel.subscribe(&:ack!)
 
     assert_equal 1, id1
     assert_equal 2, id2
@@ -582,7 +612,10 @@ class ChannelTest < Minitest::Test
   def test_channel_without_stats_does_not_raise
     channel = TypedBus::Channel.new(:nostats, timeout: 0.1)
     received = []
-    channel.subscribe { |d| received << d.message; d.ack! }
+    channel.subscribe do |d|
+      received << d.message
+      d.ack!
+    end
     tracker = nil
 
     Async { tracker = channel.publish("msg") }
@@ -594,7 +627,7 @@ class ChannelTest < Minitest::Test
 
   def test_channel_without_stats_dead_letters_without_raising
     channel = TypedBus::Channel.new(:nostats, timeout: 0.1)
-    channel.subscribe { |d| d.nack! }
+    channel.subscribe(&:nack!)
 
     Async { channel.publish("msg") }
 
@@ -604,7 +637,7 @@ class ChannelTest < Minitest::Test
   def test_stats_recording_published_counter
     stats = TypedBus::Stats.new
     channel = TypedBus::Channel.new(:counted, timeout: 0.1, stats: stats)
-    channel.subscribe { |d| d.ack! }
+    channel.subscribe(&:ack!)
 
     Async do
       channel.publish("a")
@@ -618,7 +651,7 @@ class ChannelTest < Minitest::Test
 
   def test_pending_false_when_no_messages
     channel = make_channel
-    channel.subscribe { |d| d.ack! }
+    channel.subscribe(&:ack!)
     refute channel.pending?
     assert_equal 0, channel.pending_count
   end
@@ -645,7 +678,7 @@ class ChannelTest < Minitest::Test
 
     # publish iterates a snapshot of the subscribers, so the second one
     # still receives this in-flight message after being unsubscribed.
-    assert_equal [:first, :second], received
+    assert_equal %i[first second], received
     assert_equal 1, channel.subscriber_count
   end
 
@@ -690,7 +723,7 @@ class ChannelTest < Minitest::Test
 
   def test_force_nack_skips_already_resolved_delivery
     channel = make_channel(timeout: 1)
-    channel.subscribe { |d| d.ack! }
+    channel.subscribe(&:ack!)
 
     Async do
       channel.publish("msg")
@@ -716,7 +749,7 @@ class ChannelTest < Minitest::Test
     TypedBus.logger = Logger.new(log_output)
 
     channel = make_channel
-    channel.subscribe { |d| d.ack! }
+    channel.subscribe(&:ack!)
     Async { channel.publish("msg") }
 
     assert_match(/channel created/, log_output.string)
@@ -734,9 +767,20 @@ class ChannelTest < Minitest::Test
     tracker = nil
 
     Async do |task|
-      channel.subscribe { |d| task.async { sleep 0.05; d.ack! } }
-      channel.subscribe { |d| channel.unsubscribe(id_b); d.ack! }
-      id_b = channel.subscribe { |d| received << d.message; d.ack! }
+      channel.subscribe do |d|
+        task.async do
+          sleep 0.05
+          d.ack!
+        end
+      end
+      channel.subscribe do |d|
+        channel.unsubscribe(id_b)
+        d.ack!
+      end
+      id_b = channel.subscribe do |d|
+        received << d.message
+        d.ack!
+      end
 
       tracker = channel.publish(:hello)
       sleep 0.4 # well past the delivery timeout
@@ -756,8 +800,11 @@ class ChannelTest < Minitest::Test
       task.with_timeout(2) do
         3.times do
           id = nil
-          channel.subscribe { |d| channel.unsubscribe(id); d.ack! }
-          id = channel.subscribe { |d| d.ack! }
+          channel.subscribe do |d|
+            channel.unsubscribe(id)
+            d.ack!
+          end
+          id = channel.subscribe(&:ack!)
           channel.publish(:msg)
           published += 1
         end
@@ -813,14 +860,17 @@ class ChannelTest < Minitest::Test
   def test_module_typed_channel_accepts_including_objects
     channel = make_channel(type: Comparable)
     received = []
-    channel.subscribe { |d| received << d.message; d.ack! }
+    channel.subscribe do |d|
+      received << d.message
+      d.ack!
+    end
 
     Async { channel.publish("text") }
 
     assert_equal ["text"], received
 
     error = nil
-    Async { channel.publish(Object.new) rescue error = $! }
+    Async { channel.publish(Object.new) rescue error = $ERROR_INFO }
     assert_instance_of ArgumentError, error
   end
 
@@ -830,7 +880,7 @@ class ChannelTest < Minitest::Test
     stats = TypedBus::Stats.new
     channel = make_channel(stats: stats)
     channel.dead_letter_queue.on_dead_letter { |_| raise "alert hook down" }
-    channel.subscribe { |d| d.nack! }
+    channel.subscribe(&:nack!)
 
     Async { channel.publish("msg") }
 
@@ -845,7 +895,7 @@ class ChannelTest < Minitest::Test
     channel.dead_letter_queue.on_dead_letter { |_| raise "alert hook down" }
 
     error = nil
-    Async { channel.publish("orphan") rescue error = $! }
+    Async { channel.publish("orphan") rescue error = $ERROR_INFO }
 
     assert_equal "alert hook down", error&.message
 
@@ -883,7 +933,7 @@ class ChannelTest < Minitest::Test
   def test_no_backpressure_log_when_under_capacity
     log = capture_log do
       channel = make_channel(max_pending: 10)
-      channel.subscribe { |d| d.ack! }
+      channel.subscribe(&:ack!)
       Async { channel.publish("msg") }
     end
 
@@ -897,7 +947,10 @@ class ChannelTest < Minitest::Test
       channel.subscribe { |d| held << d }
       Async do |task|
         channel.publish(1)
-        task.async { sleep 0.02; held.shift.ack! }
+        task.async do
+          sleep 0.02
+          held.shift.ack!
+        end
         channel.publish(2)
         held.shift.ack!
       end

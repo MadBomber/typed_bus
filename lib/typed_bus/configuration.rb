@@ -54,7 +54,7 @@ module TypedBus
     # @return [Numeric, nil] the validated value
     def self.validate_throttle!(value, context = nil)
       return value if value.nil?
-      return value if value.is_a?(Numeric) && value.real? && (value.zero? || (value > 0 && value < 1))
+      return value if value.is_a?(Numeric) && value.real? && (value.zero? || (value.positive? && value < 1))
 
       raise ArgumentError, "throttle must be 0 (off) or between 0.0 and 1.0 (exclusive), got #{value.inspect}#{context}"
     end

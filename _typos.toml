@@ -1,0 +1,3 @@
+[default.extend-words]
+# ratatui_ruby / RatatuiRuby is the TUI library used by examples/15_performance.rb
+ratatui = "ratatui"

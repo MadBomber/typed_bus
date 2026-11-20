@@ -8,8 +8,9 @@ gemspec
 group :development, :test do
   gem "debug_me"
   gem "irb"
-  gem "rake"
   gem "minitest"
+  gem "rake"
+  gem "rubocop", require: false
   gem "simplecov", require: false
 end
 

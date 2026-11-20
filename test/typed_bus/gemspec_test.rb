@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+require 'English'
 require "test_helper"
 
 class GemspecTest < Minitest::Test
@@ -12,7 +13,7 @@ class GemspecTest < Minitest::Test
 
   def tracked_files
     files = IO.popen(%w[git ls-files -z], chdir: ROOT, &:read).split("\x0")
-    assert $?.success?, "git ls-files failed; run the suite from a git checkout"
+    assert $CHILD_STATUS.success?, "git ls-files failed; run the suite from a git checkout"
     files
   end
 

@@ -13,6 +13,9 @@ require_relative "typed_bus/dead_letter_queue"
 require_relative "typed_bus/channel"
 require_relative "typed_bus/message_bus"
 
+# Async pub/sub message bus with typed channels, explicit ACK/NACK delivery,
+# dead letter queues, backpressure and adaptive throttling. Everything runs
+# on fibers inside a single Async reactor.
 module TypedBus
   class << self
     # The global Configuration instance.

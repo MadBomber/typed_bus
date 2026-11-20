@@ -29,7 +29,7 @@ module TypedBus
       @throttle          = Configuration.validate_throttle!(throttle, " on channel :#{name}").to_f
       @subscribers       = {}
       @next_subscriber_id = 0
-      @pending_deliveries = {}
+      @pending_deliveries = {}.compare_by_identity
       @active_deliveries  = []
       @closed            = false
       @dead_letter_queue = DeadLetterQueue.new
@@ -39,7 +39,10 @@ module TypedBus
       Configuration.validate_max_pending!(@max_pending)
       validate_throttle_config!
 
-      log(:info, "channel created (type=#{type || 'any'}, timeout=#{timeout ? "#{timeout}s" : 'none'}, max_pending=#{max_pending || 'unbounded'}, throttle=#{@throttle > 0 ? "#{(@throttle * 100).round}%" : 'off'})")
+      log(:info,
+          "channel created (type=#{type || 'any'}, timeout=#{timeout ? "#{timeout}s" : 'none'}, " \
+          "max_pending=#{max_pending || 'unbounded'}, " \
+          "throttle=#{@throttle.positive? ? "#{(@throttle * 100).round}%" : 'off'})")
     end
 
     # Publish a message to all current subscribers.
@@ -53,72 +56,17 @@ module TypedBus
     # @return [DeliveryTracker, nil] the tracker, or nil when there are no
     #   subscribers and the message was dead-lettered
     def publish(message)
-      ensure_open!
-
-      validate_type!(message)
-      apply_throttle! if throttled?
-      wait_for_capacity if bounded?
-      ensure_open! # the channel may have closed while we waited
+      admit!(message)
 
       # Snapshot ids and handlers together so every id the tracker waits on
       # gets a Delivery, even if a handler unsubscribes someone mid-publish.
-      subscribers    = @subscribers.to_a
-      subscriber_ids = subscribers.map(&:first)
+      subscribers = @subscribers.to_a
+      return dead_letter_no_subscribers(message) if subscribers.empty?
 
-      if subscriber_ids.empty?
-        log(:warn, "published with no subscribers, routing to DLQ (message=#{message.class})")
-        dead_letter_no_subscribers(message)
-        return nil
-      end
+      log(:info, "published message (type=#{message.class}, subscribers=#{subscribers.size})")
 
-      log(:info, "published message (type=#{message.class}, subscribers=#{subscriber_ids.size})")
-
-      tracker = DeliveryTracker.new(message, channel_name: @name, subscriber_ids: subscriber_ids)
-      @pending_deliveries[tracker.object_id] = tracker
-
-      tracker.on_complete { record_stat(:delivered) }
-      tracker.on_resolved { tracker_resolved(tracker) }
-
-      subscribers.each do |sub_id, handler|
-        delivery = Delivery.new(
-          message,
-          channel_name: @name,
-          subscriber_id: sub_id,
-          timeout: @timeout,
-          on_ack: ->(_id) {
-            @active_deliveries.delete(delivery)
-            tracker.ack(sub_id)
-          },
-          on_nack: ->(_id) {
-            @active_deliveries.delete(delivery)
-            tracker.nack(sub_id)
-            # Count before pushing: the DLQ runs a user callback that may raise.
-            record_stat(:dead_lettered)
-            record_stat(delivery.timed_out? ? :timed_out : :nacked)
-            @dead_letter_queue.push(delivery)
-          }
-        )
-
-        @active_deliveries << delivery
-
-        # An earlier handler may have closed the channel mid-fan-out. close
-        # only force-nacks deliveries that already exist, so dead-letter
-        # this one the same way instead of dispatching it.
-        if @closed
-          delivery.nack!
-          next
-        end
-
-        log(:debug, "notifying subscriber ##{sub_id} (message=#{message.class})")
-
-        Async do
-          handler.call(delivery)
-        rescue StandardError => e
-          log(:error, "subscriber ##{sub_id} raised #{e.class}: #{e.message}")
-          delivery.nack! if delivery.pending?
-        end
-      end
-
+      tracker = track(message, subscribers.map(&:first))
+      subscribers.each { |sub_id, handler| deliver(tracker, sub_id, handler) }
       tracker
     end
 
@@ -142,14 +90,10 @@ module TypedBus
     #
     # @param id_or_block [Integer, Proc]
     def unsubscribe(id_or_block)
-      case id_or_block
-      when Integer
-        @subscribers.delete(id_or_block)
-        log(:info, "subscriber ##{id_or_block} unsubscribed (remaining=#{@subscribers.size})")
+      if id_or_block.is_a?(Integer)
+        unsubscribe_id(id_or_block)
       else
-        before = @subscribers.size
-        @subscribers.delete_if { |_, v| v == id_or_block }
-        log(:info, "subscriber unsubscribed by reference (removed=#{before - @subscribers.size}, remaining=#{@subscribers.size})")
+        unsubscribe_handler(id_or_block)
       end
     end
 
@@ -191,7 +135,8 @@ module TypedBus
 
     # Hard reset: cancel all timeout tasks, discard all pending state and DLQ.
     def clear!
-      log(:info, "clearing all state (active=#{@active_deliveries.size}, pending=#{@pending_deliveries.size}, dlq=#{@dead_letter_queue.size})")
+      log(:info,
+          "clearing all state (active=#{@active_deliveries.size}, pending=#{@pending_deliveries.size}, dlq=#{@dead_letter_queue.size})")
       @active_deliveries.each(&:cancel_timeout)
       @active_deliveries.clear
       @pending_deliveries.clear
@@ -203,6 +148,26 @@ module TypedBus
 
     def ensure_open!
       raise "Channel :#{@name} is closed" if @closed
+    end
+
+    # Everything that can reject or delay a publish before fan-out.
+    def admit!(message)
+      ensure_open!
+      validate_type!(message)
+      apply_throttle! if throttled?
+      wait_for_capacity if bounded?
+      ensure_open! # the channel may have closed while we waited
+    end
+
+    def unsubscribe_id(id)
+      @subscribers.delete(id)
+      log(:info, "subscriber ##{id} unsubscribed (remaining=#{@subscribers.size})")
+    end
+
+    def unsubscribe_handler(handler)
+      ids = @subscribers.select { |_, registered| registered == handler }.keys
+      ids.each { |id| @subscribers.delete(id) }
+      log(:info, "subscriber unsubscribed by reference (removed=#{ids.size}, remaining=#{@subscribers.size})")
     end
 
     def validate_type_config!
@@ -240,8 +205,9 @@ module TypedBus
       return unless @type
       return if message.is_a?(@type)
 
-      log(:error, "type mismatch: expected #{@type}, got #{message.class}")
-      raise ArgumentError, "Expected #{@type}, got #{message.class} on channel :#{@name}"
+      actual = message.class
+      log(:error, "type mismatch: expected #{@type}, got #{actual}")
+      raise ArgumentError, "Expected #{@type}, got #{actual} on channel :#{@name}"
     end
 
     def bounded?
@@ -249,17 +215,26 @@ module TypedBus
     end
 
     def wait_for_capacity
-      return if @pending_deliveries.size < @max_pending
+      pending = pending_count
+      return if pending < @max_pending
 
-      log(:debug, "backpressure: waiting for capacity (pending=#{@pending_deliveries.size}, max=#{@max_pending})")
-      while @pending_deliveries.size >= @max_pending && !@closed
-        @backpressure.wait
-      end
-      log(:debug, "backpressure: capacity available (pending=#{@pending_deliveries.size})")
+      log(:debug, "backpressure: waiting for capacity (pending=#{pending}, max=#{@max_pending})")
+      log(:debug, "backpressure: capacity available (pending=#{wait_while_full})")
+    end
+
+    # Block until a tracker resolves below the limit or the channel closes.
+    # @return [Integer] the pending count once the wait is over
+    def wait_while_full
+      @backpressure.wait while full? && !closed?
+      pending_count
+    end
+
+    def full?
+      pending_count >= @max_pending
     end
 
     def tracker_resolved(tracker)
-      @pending_deliveries.delete(tracker.object_id)
+      @pending_deliveries.delete(tracker)
       @backpressure.signal if bounded?
     end
 
@@ -270,18 +245,84 @@ module TypedBus
       first_error = nil
       @active_deliveries.dup.each do |delivery|
         delivery.nack! if delivery.pending?
-      rescue StandardError => e
-        first_error ||= e
+      rescue StandardError => error
+        first_error ||= error
       end
       raise first_error if first_error
     end
 
+    # Start tracking one publish across its subscribers.
+    # @return [DeliveryTracker]
+    def track(message, subscriber_ids)
+      tracker = DeliveryTracker.new(message, channel_name: @name, subscriber_ids: subscriber_ids)
+      @pending_deliveries[tracker] = tracker
+
+      tracker.on_complete { record_stat(:delivered) }
+      tracker.on_resolved { tracker_resolved(tracker) }
+      tracker
+    end
+
+    # Hand one subscriber its Delivery for the tracked message.
+    def deliver(tracker, sub_id, handler)
+      delivery = build_delivery(tracker, sub_id)
+      @active_deliveries << delivery
+
+      # An earlier handler may have closed the channel mid-fan-out. close
+      # only force-nacks deliveries that already exist, so dead-letter
+      # this one the same way instead of dispatching it.
+      return delivery.nack! if closed?
+
+      log(:debug, "notifying subscriber ##{sub_id} (message=#{tracker.message.class})")
+      dispatch(handler, delivery)
+    end
+
+    # Build the Delivery envelope for one subscriber, wired to the tracker.
+    # @return [Delivery]
+    def build_delivery(tracker, sub_id)
+      delivery = Delivery.new(
+        tracker.message,
+        channel_name: @name,
+        subscriber_id: sub_id,
+        timeout: @timeout,
+        on_ack: ->(_id) { delivery_acked(delivery, tracker) },
+        on_nack: ->(_id) { delivery_nacked(delivery, tracker) }
+      )
+    end
+
+    # Run the subscriber's handler in its own task; a raising handler nacks.
+    def dispatch(handler, delivery)
+      Async do
+        handler.call(delivery)
+      rescue StandardError => error
+        log(:error, "subscriber ##{delivery.subscriber_id} raised #{error.class}: #{error.message}")
+        delivery.nack! if delivery.pending?
+      end
+    end
+
+    def delivery_acked(delivery, tracker)
+      @active_deliveries.delete(delivery)
+      tracker.ack(delivery.subscriber_id)
+    end
+
+    def delivery_nacked(delivery, tracker)
+      @active_deliveries.delete(delivery)
+      tracker.nack(delivery.subscriber_id)
+      # Count before pushing: the DLQ runs a user callback that may raise.
+      record_stat(:dead_lettered)
+      record_stat(delivery.timed_out? ? :timed_out : :nacked)
+      @dead_letter_queue.push(delivery)
+    end
+
+    # A publish with nobody listening goes straight to the DLQ.
+    # @return [nil]
     def dead_letter_no_subscribers(message)
+      log(:warn, "published with no subscribers, routing to DLQ (message=#{message.class})")
       delivery = Delivery.new(message, channel_name: @name, subscriber_id: -1)
       delivery.nack!
       record_stat(:nacked)
       record_stat(:dead_lettered)
       @dead_letter_queue.push(delivery)
+      nil
     end
 
     def record_stat(suffix)

@@ -334,11 +334,7 @@ class PerfDashboard
       ratio: ratio,
       label: "#{fmt(cur_rate)}/s",
       gauge_style: @tui.style(fg: bus.color),
-      block: @tui.block(
-        title: "Bus #{bus.name}  #{cfg[:channels]}ch x #{cfg[:publishers]}pub x #{cfg[:subscribers]}sub",
-        borders: [:all],
-        border_style: @tui.style(fg: bus.color),
-      )
+      block: titled_block("Bus #{bus.name}  #{cfg[:channels]}ch x #{cfg[:publishers]}pub x #{cfg[:subscribers]}sub", bus.color)
     )
     frame.render_widget(gauge, gauge_area)
 
@@ -357,17 +353,26 @@ class PerfDashboard
     frame.render_widget(stats, stats_area)
   end
 
+  # -- Shared layout helpers --------------------------------------------------
+
+  # A bordered block with a title; the border takes the given color.
+  def titled_block(title, color)
+    @tui.block(title: title, borders: [:all], border_style: @tui.style(fg: color))
+  end
+
+  # Split an area into equal left and right halves.
+  def split_in_half(area)
+    @tui.layout_split(
+      area,
+      direction: :horizontal,
+      constraints: [@tui.constraint_fill(1), @tui.constraint_fill(1)]
+    )
+  end
+
   # -- Sparklines: throughput left, RSS right --------------------------------
 
   def render_sparklines_row(frame, area)
-    left, right = @tui.layout_split(
-      area,
-      direction: :horizontal,
-      constraints: [
-        @tui.constraint_fill(1),
-        @tui.constraint_fill(1),
-      ]
-    )
+    left, right = split_in_half(area)
     render_throughput_sparkline(frame, left)
     render_rss_sparkline(frame, right)
   end
@@ -378,11 +383,7 @@ class PerfDashboard
       @tui.sparkline(
         data: data,
         style: @tui.style(fg: :yellow),
-        block: @tui.block(
-          title: "Throughput (ack/s)",
-          borders: [:all],
-          border_style: @tui.style(fg: :yellow),
-        )
+        block: titled_block("Throughput (ack/s)", :yellow)
       ),
       area
     )
@@ -397,11 +398,7 @@ class PerfDashboard
       @tui.sparkline(
         data: data,
         style: @tui.style(fg: :red),
-        block: @tui.block(
-          title: "RSS #{@mem.rss_mb} MB  (base #{@mem.baseline_mb}, \u0394#{delta_str} MB)",
-          borders: [:all],
-          border_style: @tui.style(fg: :red),
-        )
+        block: titled_block("RSS #{@mem.rss_mb} MB  (base #{@mem.baseline_mb}, \u0394#{delta_str} MB)", :red)
       ),
       area
     )
@@ -410,14 +407,7 @@ class PerfDashboard
   # -- Bottom row: object diagnostics left, GC + bus internals right --------
 
   def render_bottom_row(frame, area)
-    left, right = @tui.layout_split(
-      area,
-      direction: :horizontal,
-      constraints: [
-        @tui.constraint_fill(1),
-        @tui.constraint_fill(1),
-      ]
-    )
+    left, right = split_in_half(area)
     render_object_counts(frame, left)
     render_gc_and_internals(frame, right)
   end
@@ -442,11 +432,7 @@ class PerfDashboard
     frame.render_widget(
       @tui.paragraph(
         text: lines,
-        block: @tui.block(
-          title: "Live Objects (count / \u0394 from start)",
-          borders: [:all],
-          border_style: @tui.style(fg: :yellow),
-        )
+        block: titled_block("Live Objects (count / \u0394 from start)", :yellow)
       ),
       area
     )
@@ -495,11 +481,7 @@ class PerfDashboard
           ]),
           @tui.text_line(spans: bus_spans),
         ],
-        block: @tui.block(
-          title: "GC & Bus Internals",
-          borders: [:all],
-          border_style: @tui.style(fg: :red),
-        )
+        block: titled_block("GC & Bus Internals", :red)
       ),
       area
     )
