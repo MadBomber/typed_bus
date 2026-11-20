@@ -1787,6 +1787,8 @@
 <ul>
 <li>Deliveries explicitly NACKed by subscribers</li>
 <li>Deliveries that time out (auto-nack)</li>
+<li>Deliveries whose subscriber block raised (auto-nack)</li>
+<li>Deliveries still pending when the channel is closed (force-nack)</li>
 <li>Messages published with no subscribers</li>
 </ul>
 <h2 id="accessing-the-dlq">Accessing the DLQ<a class="headerlink" href="#accessing-the-dlq" title="Permanent link">&para;</a></h2>

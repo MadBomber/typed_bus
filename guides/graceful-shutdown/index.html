@@ -1796,10 +1796,11 @@
 <li><code>subscribe</code> raises <code>RuntimeError</code></li>
 <li>The DLQ retains its entries for inspection</li>
 </ul>
+<p>If an <code>on_dead_letter</code> callback raises during the force-nack, every pending delivery is still nacked and the first error is re-raised once they are all handled. Call <code>close</code> inside a <code>begin</code>/<code>rescue</code> if your callback can fail.</p>
 <h2 id="close-all-channels">Close All Channels<a class="headerlink" href="#close-all-channels" title="Permanent link">&para;</a></h2>
 <div class="language-ruby highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="n">bus</span><span class="o">.</span><span class="n">close_all</span>
 </span></code></pre></div>
-<p>Closes every channel on the bus. Each channel's pending deliveries are force-NACKed.</p>
+<p>Closes every channel on the bus. Each channel's pending deliveries are force-NACKed. If closing one channel raises, the others are still closed and the first error is re-raised afterwards.</p>
 <h2 id="clear-a-channel">Clear a Channel<a class="headerlink" href="#clear-a-channel" title="Permanent link">&para;</a></h2>
 <p>Hard reset: cancels all timeout tasks, discards pending deliveries, and clears the DLQ.</p>
 <div class="language-ruby highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="n">channel</span><span class="o">.</span><span class="n">clear!</span>

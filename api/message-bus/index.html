@@ -2309,11 +2309,11 @@
 <p>Access a channel's dead letter queue.</p>
 <h2 id="lifecycle">Lifecycle<a class="headerlink" href="#lifecycle" title="Permanent link">&para;</a></h2>
 <h3 id="closechannel_name"><code>close(channel_name)</code><a class="headerlink" href="#closechannel_name" title="Permanent link">&para;</a></h3>
-<p>Close a specific channel. Pending deliveries are force-NACKed.</p>
+<p>Close a specific channel. Pending deliveries are force-NACKed. If an <code>on_dead_letter</code> callback raises during the force-nack, every pending delivery is still nacked and the first error is re-raised once they are all handled.</p>
 <h3 id="close_all"><code>close_all</code><a class="headerlink" href="#close_all" title="Permanent link">&para;</a></h3>
-<p>Close all channels.</p>
+<p>Close all channels. If closing one raises (such as from an <code>on_dead_letter</code> callback), the remaining channels are still closed and the first error is re-raised afterwards.</p>
 <h3 id="clear"><code>clear!</code><a class="headerlink" href="#clear" title="Permanent link">&para;</a></h3>
-<p>Close all channels, clear DLQs, and reset stats.</p>
+<p>Clear every channel (cancel timeout tasks, discard pending deliveries and DLQ entries) and reset stats. Channels are not closed and stay registered; see <a href="../channel/#clear"><code>Channel#clear!</code></a>.</p>
 
 
 

@@ -1995,7 +1995,7 @@ spot. A bus with no channels says <code>(no channels registered)</code>.</p>
 </span><span id="__span-10-2"><a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a><span class="c1"># =&gt; ArgumentError: Channel :orders subscribe requires a block</span>
 </span></code></pre></div>
 <h2 id="raising-dead-letter-callbacks">Raising Dead Letter Callbacks<a class="headerlink" href="#raising-dead-letter-callbacks" title="Permanent link">&para;</a></h2>
-<p>An <code>on_dead_letter</code> callback runs inside the nack that dead-lettered the delivery. If it raises, the entry is already in the DLQ and the <code>nacked</code>/<code>timed_out</code> and <code>dead_lettered</code> stats are already counted, but the error propagates to whoever triggered the nack: the subscriber (where it is logged as a subscriber error), the timeout task, or the publisher when there are no subscribers. Rescue inside the callback if it can fail.</p>
+<p>An <code>on_dead_letter</code> callback runs inside the nack that dead-lettered the delivery. If it raises, the entry is already in the DLQ and the <code>nacked</code>/<code>timed_out</code> and <code>dead_lettered</code> stats are already counted, but the error propagates to whoever triggered the nack: the subscriber (where it is logged as a subscriber error), the timeout task, the publisher when there are no subscribers, or the caller of <code>close</code> / <code>close_all</code> when the nack comes from closing a channel. <code>close</code> still nacks every pending delivery and <code>close_all</code> still closes every channel before the first error is re-raised. Rescue inside the callback if it can fail.</p>
 
 
 

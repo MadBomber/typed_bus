@@ -2136,7 +2136,7 @@
 <p>True if the nack was caused by timeout (as opposed to explicit <code>nack!</code>).</p>
 <h2 id="timeout">Timeout<a class="headerlink" href="#timeout" title="Permanent link">&para;</a></h2>
 <h3 id="cancel_timeout"><code>cancel_timeout</code><a class="headerlink" href="#cancel_timeout" title="Permanent link">&para;</a></h3>
-<p>Cancel the timeout timer without resolving the delivery. Used internally during <code>close</code> and <code>clear!</code>.</p>
+<p>Cancel the timeout timer without resolving the delivery. Used internally by <code>Channel#clear!</code>; <code>ack!</code> and <code>nack!</code> cancel the timer themselves.</p>
 
 
 

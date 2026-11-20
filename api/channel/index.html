@@ -1439,10 +1439,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#type-class-nil" class="md-nav__link">
+  <a href="#type-class-module-nil" class="md-nav__link">
     <span class="md-ellipsis">
       
-        type → Class, nil
+        type → Class, Module, nil
       
     </span>
   </a>
@@ -1890,10 +1890,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#type-class-nil" class="md-nav__link">
+  <a href="#type-class-module-nil" class="md-nav__link">
     <span class="md-ellipsis">
       
-        type → Class, nil
+        type → Class, Module, nil
       
     </span>
   </a>
@@ -2166,7 +2166,7 @@
 <h2 id="attributes">Attributes<a class="headerlink" href="#attributes" title="Permanent link">&para;</a></h2>
 <h3 id="name-symbol"><code>name</code> → <code>Symbol</code><a class="headerlink" href="#name-symbol" title="Permanent link">&para;</a></h3>
 <p>Channel name.</p>
-<h3 id="type-class-nil"><code>type</code> → <code>Class</code>, <code>nil</code><a class="headerlink" href="#type-class-nil" title="Permanent link">&para;</a></h3>
+<h3 id="type-class-module-nil"><code>type</code> → <code>Class</code>, <code>Module</code>, <code>nil</code><a class="headerlink" href="#type-class-module-nil" title="Permanent link">&para;</a></h3>
 <p>Type constraint, or <code>nil</code> for untyped channels.</p>
 <h3 id="dead_letter_queue-deadletterqueue"><code>dead_letter_queue</code> → <code>DeadLetterQueue</code><a class="headerlink" href="#dead_letter_queue-deadletterqueue" title="Permanent link">&para;</a></h3>
 <p>The channel's dead letter queue.</p>
@@ -2195,7 +2195,8 @@
 <p>True if the channel has been closed.</p>
 <h2 id="lifecycle">Lifecycle<a class="headerlink" href="#lifecycle" title="Permanent link">&para;</a></h2>
 <h3 id="close"><code>close</code><a class="headerlink" href="#close" title="Permanent link">&para;</a></h3>
-<p>Stop accepting new publishes and subscribes. Pending deliveries are force-NACKed and routed to the DLQ.</p>
+<p>Stop accepting new publishes and subscribes. Pending deliveries are force-NACKed and routed to the DLQ. Publishers waiting for capacity are woken and raise the closed error.</p>
+<p>If an <code>on_dead_letter</code> callback raises during the force-nack, every pending delivery is still nacked and the first error is re-raised once they are all handled.</p>
 <h3 id="clear"><code>clear!</code><a class="headerlink" href="#clear" title="Permanent link">&para;</a></h3>
 <p>Hard reset: cancel all timeout tasks, discard pending state, clear DLQ. Does not mark the channel as closed.</p>
 

@@ -1818,6 +1818,8 @@
 <ul>
 <li>Explicit <code>nack!</code> calls</li>
 <li>Delivery timeouts (auto-nack)</li>
+<li>Subscriber blocks that raise (auto-nack)</li>
+<li>Deliveries still pending when a channel closes (force-nack)</li>
 <li>Messages published with no subscribers</li>
 </ul>
 <p>The DLQ supports iteration, draining for retry, and callbacks for real-time alerting.</p>

@@ -1846,8 +1846,11 @@ with three subscribers can add up to 3 to each of them.</p>
 </span><span id="__span-4-3"><a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>
 </span><span id="__span-4-4"><a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a><span class="c1"># ... publish and subscribe ...</span>
 </span><span id="__span-4-5"><a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a>
-</span><span id="__span-4-6"><a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a><span class="n">stats</span><span class="o">[</span><span class="ss">:work_published</span><span class="o">]</span><span class="w">  </span><span class="c1"># =&gt; N</span>
+</span><span id="__span-4-6"><a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a><span class="n">stats</span><span class="o">[</span><span class="ss">:work_delivered</span><span class="o">]</span><span class="w">  </span><span class="c1"># =&gt; N</span>
 </span></code></pre></div>
+<p>A bare <code>Channel</code> records <code>delivered</code>, <code>nacked</code>, <code>timed_out</code>, <code>dead_lettered</code>
+and <code>throttled</code>. It does not record <code>published</code>: that counter is incremented
+by <code>MessageBus#publish</code>, so <code>stats[:work_published]</code> stays <code>0</code> here.</p>
 <h2 id="monitoring-pattern">Monitoring Pattern<a class="headerlink" href="#monitoring-pattern" title="Permanent link">&para;</a></h2>
 <p>Combine stats with DLQ callbacks for real-time alerting. Because
 <code>dead_lettered</code> counts per subscriber delivery and <code>published</code> counts per
