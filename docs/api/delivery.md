@@ -70,4 +70,4 @@ True if the nack was caused by timeout (as opposed to explicit `nack!`).
 
 ### `cancel_timeout`
 
-Cancel the timeout timer without resolving the delivery. Used internally during `close` and `clear!`.
+Cancel the timeout timer without resolving the delivery. Used internally by `Channel#clear!`; `ack!` and `nack!` cancel the timer themselves.

@@ -6,6 +6,8 @@ Every channel has a dead letter queue (DLQ) that collects failed deliveries.
 
 - Deliveries explicitly NACKed by subscribers
 - Deliveries that time out (auto-nack)
+- Deliveries whose subscriber block raised (auto-nack)
+- Deliveries still pending when the channel is closed (force-nack)
 - Messages published with no subscribers
 
 ## Accessing the DLQ

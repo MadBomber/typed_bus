@@ -19,13 +19,15 @@ After closing:
 - `subscribe` raises `RuntimeError`
 - The DLQ retains its entries for inspection
 
+If an `on_dead_letter` callback raises during the force-nack, every pending delivery is still nacked and the first error is re-raised once they are all handled. Call `close` inside a `begin`/`rescue` if your callback can fail.
+
 ## Close All Channels
 
 ```ruby
 bus.close_all
 ```
 
-Closes every channel on the bus. Each channel's pending deliveries are force-NACKed.
+Closes every channel on the bus. Each channel's pending deliveries are force-NACKed. If closing one channel raises, the others are still closed and the first error is re-raised afterwards.
 
 ## Clear a Channel
 

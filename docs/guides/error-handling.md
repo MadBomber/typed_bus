@@ -126,4 +126,4 @@ bus.subscribe(:orders)
 
 ## Raising Dead Letter Callbacks
 
-An `on_dead_letter` callback runs inside the nack that dead-lettered the delivery. If it raises, the entry is already in the DLQ and the `nacked`/`timed_out` and `dead_lettered` stats are already counted, but the error propagates to whoever triggered the nack: the subscriber (where it is logged as a subscriber error), the timeout task, or the publisher when there are no subscribers. Rescue inside the callback if it can fail.
+An `on_dead_letter` callback runs inside the nack that dead-lettered the delivery. If it raises, the entry is already in the DLQ and the `nacked`/`timed_out` and `dead_lettered` stats are already counted, but the error propagates to whoever triggered the nack: the subscriber (where it is logged as a subscriber error), the timeout task, the publisher when there are no subscribers, or the caller of `close` / `close_all` when the nack comes from closing a channel. `close` still nacks every pending delivery and `close_all` still closes every channel before the first error is re-raised. Rescue inside the callback if it can fail.
