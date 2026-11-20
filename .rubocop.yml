@@ -93,7 +93,6 @@ Lint/UnusedMethodArgument:
 
 Lint/ConstantDefinitionInBlock:
   Exclude:
-    - 'Rakefile'
     - 'test/**/*'
 
 # ── Gemspec ────────────────────────────────────────────────────────────────
@@ -150,6 +149,5 @@ Metrics/ParameterLists:
 Metrics/BlockLength:
   Max: 60
   Exclude:
-    - 'Rakefile'
     - '*.gemspec'
     - 'test/**/*'

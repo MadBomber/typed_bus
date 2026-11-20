@@ -3,3 +3,20 @@
 # gem lifecycle) come from the sibling dev repository.
 
 import_up "dev/.loki"
+
+# Defined after the import, so these replace the shared tasks of the same
+# name: those run `rake test`, and typed_bus has no Rakefile.
+class Tasks
+  # One process for every test/**/*_test.rb. The same command runs in
+  # .github/workflows/test.yml, where asgard is not installed.
+  TEST_LOADER  = %q('Dir["test/**/*_test.rb"].each { |f| require File.expand_path(f) }').freeze
+  TEST_COMMAND = "bundle exec ruby -Itest -e #{TEST_LOADER}".freeze
+
+  desc "Run the test suite (Minitest)"
+  def test_check = run_gate(:test, "Tests", TEST_COMMAND, summary: /\d+ runs,/)
+
+  desc "Run the test suite with verbose output"
+  def test_verbose
+    sh "#{TEST_COMMAND} -- -v"
+  end
+end
