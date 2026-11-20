@@ -34,7 +34,9 @@ module TypedBus
       @channels = {}
       @stats = Stats.new
       effective_throttle = @config.throttle.to_f
-      log(:info, "message bus initialized (default_throttle=#{effective_throttle > 0 ? "#{(effective_throttle * 100).round}%" : 'off'})")
+      log(:info,
+          "message bus initialized " \
+          "(default_throttle=#{effective_throttle.positive? ? "#{(effective_throttle * 100).round}%" : 'off'})")
     end
 
     # Register a named channel.
@@ -56,9 +58,13 @@ module TypedBus
       effective_max_pending = resolved[:max_pending]
       effective_throttle    = resolved[:throttle]
 
-      channel = Channel.new(name, type: type, timeout: effective_timeout, max_pending: effective_max_pending, stats: @stats, throttle: effective_throttle)
+      channel = Channel.new(name, type: type, timeout: effective_timeout, max_pending: effective_max_pending,
+                                  stats: @stats, throttle: effective_throttle)
       # Logged only after Channel.new has validated the arguments, so a rejected add logs nothing here.
-      log(:info, "added channel :#{name} (type=#{type || 'any'}, timeout=#{effective_timeout ? "#{effective_timeout}s" : 'none'}, max_pending=#{effective_max_pending || 'unbounded'})")
+      log(:info,
+          "added channel :#{name} (type=#{type || 'any'}, " \
+          "timeout=#{effective_timeout ? "#{effective_timeout}s" : 'none'}, " \
+          "max_pending=#{effective_max_pending || 'unbounded'})")
       @channels[name] = channel
       channel
     end
@@ -88,9 +94,9 @@ module TypedBus
     # @param channel_name [Symbol]
     # @raise [ArgumentError] if the channel is unknown or no block is given
     # @return [Integer] subscriber id
-    def subscribe(channel_name, &block)
+    def subscribe(channel_name, &)
       channel = fetch_channel!(channel_name)
-      channel.subscribe(&block)
+      channel.subscribe(&)
     end
 
     # Unsubscribe from a named channel.
@@ -133,9 +139,17 @@ module TypedBus
     end
 
     # Close all channels (graceful shutdown).
+    # Every channel is closed even if closing one raises (such as from an
+    # on_dead_letter callback); the first error is re-raised afterwards.
     def close_all
       log(:info, "closing all channels (#{@channels.size} channels)")
-      @channels.each_value(&:close)
+      first_error = nil
+      @channels.each_value do |channel|
+        channel.close
+      rescue StandardError => error
+        first_error ||= error
+      end
+      raise first_error if first_error
     end
 
     # List registered channel names.
@@ -170,7 +184,8 @@ module TypedBus
     # Mirrors the up-front checks Channel#publish raises on. A channel that
     # closes while the publisher waits on throttle or backpressure is not caught.
     def accepts?(channel, message)
-      !channel.closed? && (channel.type.nil? || message.is_a?(channel.type))
+      type = channel.type
+      !channel.closed? && (type.nil? || message.is_a?(type))
     end
 
     def unknown_channel_message(name)

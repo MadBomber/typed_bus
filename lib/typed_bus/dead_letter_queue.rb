@@ -16,7 +16,9 @@ module TypedBus
     def push(delivery)
       @entries << delivery
       reason = delivery.timed_out? ? "timeout" : "nack"
-      log(:warn, "entry added (channel=:#{delivery.channel_name}, subscriber=##{delivery.subscriber_id}, reason=#{reason}, total=#{@entries.size})")
+      log(:warn,
+          "entry added (channel=:#{delivery.channel_name}, subscriber=##{delivery.subscriber_id}, " \
+          "reason=#{reason}, total=#{@entries.size})")
       @on_dead_letter&.call(delivery)
     end
 
@@ -29,8 +31,8 @@ module TypedBus
     end
 
     # Iterate over dead letters without removing them.
-    def each(&block)
-      @entries.each(&block)
+    def each(&)
+      @entries.each(&)
     end
 
     include Enumerable
@@ -47,7 +49,8 @@ module TypedBus
     # ones not yet yielded go back.
     # @return [Array<Delivery>] the drained entries
     def drain
-      drained, @entries = @entries, []
+      drained = @entries
+      @entries = []
       if block_given?
         handled = 0
         begin
@@ -69,7 +72,7 @@ module TypedBus
     def clear!
       count = @entries.size
       @entries.clear
-      log(:info, "cleared #{count} entries") if count > 0
+      log(:info, "cleared #{count} entries") if count.positive?
     end
 
     # Register or replace the callback fired when entries arrive.

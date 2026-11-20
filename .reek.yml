@@ -1,0 +1,58 @@
+---
+# Reek configuration for typed_bus.
+#
+# The gate (reek_check in ../dev/quality.loki) fails on any smell Reek
+# reports; there is no baseline of grandfathered smells. Every detector is
+# left at its default except the ones below, each of which describes this
+# gem's public API or its optional settings rather than a defect.
+detectors:
+
+  # ack!, nack!, clear! and reset! are the published API; the bang marks a
+  # state change, not the dangerous twin of a safe method. Renaming them
+  # would break every caller.
+  MissingSafeMethod:
+    enabled: false
+
+  # nil is a documented setting: no type constraint, no timeout, no
+  # max_pending (unbounded). Checking for it is how those options work.
+  NilCheck:
+    enabled: false
+
+  # Channel, Delivery and MessageBus#add_channel take their options as
+  # keyword arguments (type:, timeout:, max_pending:, stats:, throttle:).
+  LongParameterList:
+    max_params: 6
+    overrides:
+      initialize:
+        max_params: 6   # Reek's built-in limit for initialize is 5
+
+  # A Channel is one stateful object by design (fiber-only, single
+  # reactor): subscribers, pending trackers, active deliveries, DLQ,
+  # backpressure condition and its settings.
+  TooManyInstanceVariables:
+    max_instance_variables: 13
+
+  # Channel keeps each publish step in its own small private method so
+  # every step can be tested in isolation.
+  TooManyMethods:
+    max_methods: 35
+
+  # Default is 5. Flog is the complexity gate; this catches only outliers.
+  TooManyStatements:
+    max_statements: 10
+
+  # Private helpers such as log(level, message) format for TypedBus.logger
+  # and need no instance state.
+  UtilityFunction:
+    public_methods_only: true
+
+  # Configuration exists to be written to: TypedBus.configure { |c| c.timeout = 5 }.
+  Attribute:
+    exclude:
+      - 'TypedBus::Configuration#timeout'
+
+  # Running a subscriber's handler is about the Delivery it resolves; the
+  # Async task belongs to the channel, so the method stays here.
+  FeatureEnvy:
+    exclude:
+      - 'TypedBus::Channel#dispatch'

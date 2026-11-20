@@ -3,9 +3,9 @@
 require "test_helper"
 
 class ChannelThrottleTest < Minitest::Test
-  def make_channel(**opts)
+  def make_channel(**)
     defaults = { timeout: 0.1 }
-    TypedBus::Channel.new(:test, **defaults.merge(opts))
+    TypedBus::Channel.new(:test, **defaults, **)
   end
 
   # --- Validation errors ---
@@ -36,7 +36,10 @@ class ChannelThrottleTest < Minitest::Test
   def test_channel_without_throttle_works_normally
     channel = make_channel(max_pending: 5)
     received = []
-    channel.subscribe { |d| received << d.message; d.ack! }
+    channel.subscribe do |d|
+      received << d.message
+      d.ack!
+    end
 
     Async { channel.publish("hello") }
 
@@ -46,7 +49,10 @@ class ChannelThrottleTest < Minitest::Test
   def test_unbounded_channel_without_throttle_works
     channel = make_channel
     received = []
-    channel.subscribe { |d| received << d.message; d.ack! }
+    channel.subscribe do |d|
+      received << d.message
+      d.ack!
+    end
 
     Async { channel.publish("hello") }
 
@@ -58,11 +64,10 @@ class ChannelThrottleTest < Minitest::Test
   def test_throttle_records_stat_when_active
     stats = TypedBus::Stats.new
     channel = TypedBus::Channel.new(:test,
-      max_pending: 10,
-      stats: stats,
-      timeout: 5,
-      throttle: 0.5
-    )
+                                    max_pending: 10,
+                                    stats: stats,
+                                    timeout: 5,
+                                    throttle: 0.5)
     # Fill to >50% capacity so throttle kicks in
     deliveries = []
     channel.subscribe { |d| deliveries << d }
@@ -83,7 +88,7 @@ class ChannelThrottleTest < Minitest::Test
       timeout: 1,
       throttle: 0.5
     )
-    channel.subscribe { |d| d.ack! }
+    channel.subscribe(&:ack!)
 
     Async { channel.publish("msg") }
 
@@ -100,7 +105,10 @@ class ChannelThrottleTest < Minitest::Test
       throttle: 0.5
     )
     received = []
-    channel.subscribe { |d| received << d.message; d.ack! }
+    channel.subscribe do |d|
+      received << d.message
+      d.ack!
+    end
 
     Async do
       5.times { |i| channel.publish("msg#{i}") }
@@ -114,12 +122,11 @@ class ChannelThrottleTest < Minitest::Test
   def test_throttle_only_activates_past_threshold
     stats = TypedBus::Stats.new
     channel = TypedBus::Channel.new(:test,
-      max_pending: 10,
-      stats: stats,
-      timeout: 5,
-      throttle: 0.5
-    )
-    channel.subscribe { |d| d.ack! }
+                                    max_pending: 10,
+                                    stats: stats,
+                                    timeout: 5,
+                                    throttle: 0.5)
+    channel.subscribe(&:ack!)
 
     # With max_pending=10 and immediate acks, pending never exceeds 1.
     # 1 pending = 90% remaining, well above 50% threshold.
@@ -135,11 +142,10 @@ class ChannelThrottleTest < Minitest::Test
   def test_custom_throttle_threshold
     stats = TypedBus::Stats.new
     channel = TypedBus::Channel.new(:test,
-      max_pending: 10,
-      stats: stats,
-      timeout: 5,
-      throttle: 0.8
-    )
+                                    max_pending: 10,
+                                    stats: stats,
+                                    timeout: 5,
+                                    throttle: 0.8)
     # throttle at 80% remaining — even 3 pending (70% remaining) should trigger
     deliveries = []
     channel.subscribe { |d| deliveries << d }
@@ -156,10 +162,9 @@ class ChannelThrottleTest < Minitest::Test
 
   def test_throttle_delay_measurably_slows_publishes
     channel = TypedBus::Channel.new(:test,
-      max_pending: 20,
-      timeout: 5,
-      throttle: 0.95 # starts throttling at 95% remaining (i.e., from the second publish)
-    )
+                                    max_pending: 20,
+                                    timeout: 5,
+                                    throttle: 0.95) # starts throttling at 95% remaining (i.e., from the second publish)
     deliveries = []
     channel.subscribe { |d| deliveries << d }
 
@@ -180,12 +185,11 @@ class ChannelThrottleTest < Minitest::Test
   def test_explicit_throttle_zero_is_disabled
     stats = TypedBus::Stats.new
     channel = TypedBus::Channel.new(:test,
-      max_pending: 10,
-      stats: stats,
-      timeout: 0.1,
-      throttle: 0.0
-    )
-    channel.subscribe { |d| d.ack! }
+                                    max_pending: 10,
+                                    stats: stats,
+                                    timeout: 0.1,
+                                    throttle: 0.0)
+    channel.subscribe(&:ack!)
 
     Async { 3.times { channel.publish("msg") } }
 
@@ -212,10 +216,9 @@ class ChannelThrottleTest < Minitest::Test
 
   def test_throttle_at_full_capacity_yields_to_backpressure
     channel = TypedBus::Channel.new(:test,
-      max_pending: 1,
-      timeout: 0.2,
-      throttle: 0.5
-    )
+                                    max_pending: 1,
+                                    timeout: 0.2,
+                                    throttle: 0.5)
     deliveries = []
     channel.subscribe { |d| deliveries << d }
 
@@ -242,7 +245,7 @@ class ChannelThrottleTest < Minitest::Test
     end
 
     assert completed,
-      "publisher at full capacity should proceed after an ack, not sleep forever"
+           "publisher at full capacity should proceed after an ack, not sleep forever"
   end
 
   def test_close_during_throttle_sleep_rejects_publish

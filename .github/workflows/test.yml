@@ -40,7 +40,7 @@ jobs:
           bundler-cache: true
 
       - name: Run test suite
-        run: bundle exec rake test
+        run: bundle exec ruby -Itest -e 'Dir["test/**/*_test.rb"].each { |f| require File.expand_path(f) }'
 
   # Loads the gem in a bundle holding only its declared runtime dependencies,
   # so an undeclared one (such as a bundled gem like logger) fails here.

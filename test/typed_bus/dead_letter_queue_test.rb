@@ -72,7 +72,8 @@ class DeadLetterQueueTest < Minitest::Test
   def test_drain_block_non_standard_error_keeps_unprocessed_entries
     dlq = TypedBus::DeadLetterQueue.new
     %w[a b c].each { |m| dlq.push(make_delivery(m)) }
-    stop = Class.new(Exception) # not a StandardError, like Interrupt or Async::Stop
+    # not a StandardError, like Interrupt or Async::Stop
+    stop = Class.new(Exception) # rubocop:disable Lint/InheritException
 
     processed = []
     assert_raises(stop) do

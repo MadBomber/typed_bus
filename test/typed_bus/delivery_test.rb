@@ -3,16 +3,16 @@
 require "test_helper"
 
 class DeliveryTest < Minitest::Test
-  def make_delivery(**opts)
+  def make_delivery(**)
     defaults = { channel_name: :test, subscriber_id: 1 }
-    TypedBus::Delivery.new("payload", **defaults.merge(opts))
+    TypedBus::Delivery.new("payload", **defaults, **)
   end
 
   # Runs the block in a fresh reactor and returns how long the reactor took
   # to finish. A live timeout task keeps the reactor open until it fires.
-  def measure_reactor(&block)
+  def measure_reactor(&)
     start = Process.clock_gettime(Process::CLOCK_MONOTONIC)
-    Async(&block).wait
+    Async(&).wait
     Process.clock_gettime(Process::CLOCK_MONOTONIC) - start
   end
 
@@ -216,11 +216,10 @@ class DeliveryTest < Minitest::Test
     Async do
       nack_count = 0
       d = TypedBus::Delivery.new("payload",
-        channel_name: :test,
-        subscriber_id: 1,
-        timeout: 0.03,
-        on_nack: ->(_id) { nack_count += 1 }
-      )
+                                 channel_name: :test,
+                                 subscriber_id: 1,
+                                 timeout: 0.03,
+                                 on_nack: ->(_id) { nack_count += 1 })
       # Directly transition state without cancelling the timeout task.
       # Simulate a resolution that leaves the timeout fiber alive.
       d.instance_variable_set(:@state, :nacked)
