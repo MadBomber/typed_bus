@@ -133,9 +133,17 @@ module TypedBus
     end
 
     # Close all channels (graceful shutdown).
+    # Every channel is closed even if closing one raises (such as from an
+    # on_dead_letter callback); the first error is re-raised afterwards.
     def close_all
       log(:info, "closing all channels (#{@channels.size} channels)")
-      @channels.each_value(&:close)
+      first_error = nil
+      @channels.each_value do |channel|
+        channel.close
+      rescue StandardError => e
+        first_error ||= e
+      end
+      raise first_error if first_error
     end
 
     # List registered channel names.
