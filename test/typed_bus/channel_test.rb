@@ -397,6 +397,37 @@ class ChannelTest < Minitest::Test
     assert_match(/Channel :test is closed/, publish_error&.message)
   end
 
+  def test_close_nacks_every_pending_delivery_when_dead_letter_callback_raises
+    channel = make_channel(timeout: nil)
+    deliveries = []
+    channel.subscribe { |d| deliveries << d } # never acks
+    channel.subscribe { |d| deliveries << d } # never acks
+    calls = 0
+    channel.dead_letter_queue.on_dead_letter do |_|
+      calls += 1
+      raise "boom #{calls}"
+    end
+
+    tracker = nil
+    close_error = nil
+    Async do
+      tracker = channel.publish("msg")
+      sleep(0.01)
+      begin
+        channel.close
+      rescue RuntimeError => e
+        close_error = e
+      end
+    end
+
+    assert_equal "boom 1", close_error&.message, "close re-raises the first callback error"
+    assert_equal 2, calls
+    assert deliveries.all?(&:nacked?), "every pending delivery should be nacked"
+    assert_equal 0, tracker.pending_count
+    assert_equal 0, channel.pending_count
+    assert_equal 2, channel.dead_letter_queue.size
+  end
+
   def test_user_tracker_hooks_do_not_replace_channel_bookkeeping
     stats = TypedBus::Stats.new
     channel = TypedBus::Channel.new(:test, timeout: nil, max_pending: 1, stats: stats)

@@ -2,6 +2,12 @@
 
 ### Fixed
 
+- `Channel#close` now nacks every pending delivery even when an
+  `on_dead_letter` callback raises, and `MessageBus#close_all` closes every
+  channel even when closing one raises. Both re-raise the first error once
+  all the work is done. Previously the first error stopped the loop, so with
+  `timeout: nil` the remaining deliveries stayed pending forever and later
+  channels were left open (#75).
 - `MessageBus#publish` no longer counts a message in `<channel>_published`
   when the channel is already closed or the message has the wrong type.
   Those publishes raise and were still counted, which inflated the counter

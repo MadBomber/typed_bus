@@ -172,6 +172,8 @@ module TypedBus
     # Pending deliveries are force-nacked (routed to DLQ with stats).
     # Publishers waiting for capacity are always woken and raise the
     # closed error, even if an on_dead_letter callback raises here.
+    # Every pending delivery is nacked even if an on_dead_letter callback
+    # raises; the first such error is re-raised once all are handled.
     def close
       return if @closed
 
@@ -261,10 +263,17 @@ module TypedBus
       @backpressure.signal if bounded?
     end
 
+    # Nack every pending delivery. An error from one (such as a raising
+    # on_dead_letter callback) must not leave the rest pending, so the
+    # first error is kept and re-raised after the loop.
     def force_nack_pending
+      first_error = nil
       @active_deliveries.dup.each do |delivery|
         delivery.nack! if delivery.pending?
+      rescue StandardError => e
+        first_error ||= e
       end
+      raise first_error if first_error
     end
 
     def dead_letter_no_subscribers(message)

@@ -324,6 +324,36 @@ class MessageBusTest < Minitest::Test
     assert_equal ["before"], received
   end
 
+  def test_close_all_closes_every_channel_when_one_close_raises
+    @bus.add_channel(:a, timeout: nil)
+    @bus.add_channel(:b, timeout: nil)
+    @bus.add_channel(:c, timeout: nil)
+    %i[a b].each do |name|
+      @bus.subscribe(name) { |_d| } # never acks
+      @bus.dead_letters(name).on_dead_letter { |_| raise "boom #{name}" }
+    end
+
+    close_error = nil
+    Async do
+      @bus.publish(:a, "one")
+      @bus.publish(:b, "two")
+      sleep(0.01)
+      begin
+        @bus.close_all
+      rescue RuntimeError => e
+        close_error = e
+      end
+    end
+
+    assert_equal "boom a", close_error&.message, "close_all re-raises the first error"
+    %i[a b c].each do |name|
+      error = assert_raises(RuntimeError) { @bus.subscribe(name) { |_d| } }
+      assert_match(/Channel :#{name} is closed/, error.message)
+    end
+    assert_equal 0, @bus.pending_count(:b)
+    assert_equal 1, @bus.dead_letters(:b).size
+  end
+
   # --- close_all on empty bus ---
 
   def test_close_all_on_empty_bus
