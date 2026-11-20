@@ -4,7 +4,7 @@
 
 Key facts:
 
-- Install with `gem "typed_bus"`; requires Ruby >= 3.2.0 and depends on `async` (~> 2.0) and `logger`.
+- Install with `gem "typed_bus"`; requires Ruby >= 4.0 and depends on `async` (~> 2.0) and `logger`.
 - `TypedBus::MessageBus` is the facade: `add_channel`, `subscribe`, `publish`. Publish inside an `Async do ... end` block.
 - A channel created with `type:` raises `ArgumentError` when a message of the wrong class is published.
 - Every subscriber receives a `Delivery` and must call `ack!` or `nack!`. A delivery that is neither acked nor nacked before its `timeout` is auto-nacked; nacked and timed-out deliveries go to the channel's dead letter queue.
