@@ -350,6 +350,9 @@ stats = TypedBus::Stats.new
 channel = TypedBus::Channel.new(:work, stats: stats, timeout: 5)
 ```
 
+A bare `Channel` records every counter except `published`, which
+`MessageBus#publish` counts.
+
 ## Logging
 
 Assign a standard Ruby `Logger` to get structured log output from all components:
@@ -390,7 +393,7 @@ channel.clear!
 
 ```ruby
 bus.close_all   # close every channel
-bus.clear!      # close, clear DLQs, and reset stats
+bus.clear!      # discard pending deliveries and DLQ entries, reset stats; channels stay open
 ```
 
 ## Architecture

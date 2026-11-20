@@ -37,7 +37,7 @@ channel = TypedBus::Channel.new(:orders,
 
 Channel name.
 
-### `type` → `Class`, `nil`
+### `type` → `Class`, `Module`, `nil`
 
 Type constraint, or `nil` for untyped channels.
 
@@ -89,7 +89,9 @@ True if the channel has been closed.
 
 ### `close`
 
-Stop accepting new publishes and subscribes. Pending deliveries are force-NACKed and routed to the DLQ.
+Stop accepting new publishes and subscribes. Pending deliveries are force-NACKed and routed to the DLQ. Publishers waiting for capacity are woken and raise the closed error.
+
+If an `on_dead_letter` callback raises during the force-nack, every pending delivery is still nacked and the first error is re-raised once they are all handled.
 
 ### `clear!`
 

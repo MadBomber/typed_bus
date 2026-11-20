@@ -96,12 +96,12 @@ Access a channel's dead letter queue.
 
 ### `close(channel_name)`
 
-Close a specific channel. Pending deliveries are force-NACKed.
+Close a specific channel. Pending deliveries are force-NACKed. If an `on_dead_letter` callback raises during the force-nack, every pending delivery is still nacked and the first error is re-raised once they are all handled.
 
 ### `close_all`
 
-Close all channels.
+Close all channels. If closing one raises (such as from an `on_dead_letter` callback), the remaining channels are still closed and the first error is re-raised afterwards.
 
 ### `clear!`
 
-Close all channels, clear DLQs, and reset stats.
+Clear every channel (cancel timeout tasks, discard pending deliveries and DLQ entries) and reset stats. Channels are not closed and stay registered; see [`Channel#clear!`](channel.md#clear).

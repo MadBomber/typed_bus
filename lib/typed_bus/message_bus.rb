@@ -165,7 +165,8 @@ module TypedBus
       @channels.key?(name)
     end
 
-    # Close all channels, clear DLQs, and reset stats.
+    # Clear every channel (pending deliveries, timeout tasks, DLQs) and reset
+    # stats. Channels are not closed and stay registered.
     def clear!
       log(:info, "clearing all channels and resetting stats")
       @channels.each_value(&:clear!)

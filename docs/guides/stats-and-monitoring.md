@@ -60,8 +60,12 @@ channel = TypedBus::Channel.new(:work, stats: stats, timeout: 5)
 
 # ... publish and subscribe ...
 
-stats[:work_published]  # => N
+stats[:work_delivered]  # => N
 ```
+
+A bare `Channel` records `delivered`, `nacked`, `timed_out`, `dead_lettered`
+and `throttled`. It does not record `published`: that counter is incremented
+by `MessageBus#publish`, so `stats[:work_published]` stays `0` here.
 
 ## Monitoring Pattern
 
