@@ -1,0 +1,5 @@
+# frozen_string_literal: true
+# typed_bus task file: shared development tasks (quality gates, git, docs,
+# gem lifecycle) come from the sibling dev repository.
+
+import_up "dev/.loki"

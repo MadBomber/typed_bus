@@ -15,3 +15,6 @@
 /.serena/
 /.playwright-mcp/
 /.aigcm_msg
+
+# quality gates
+*_output.txt
