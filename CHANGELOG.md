@@ -1,5 +1,23 @@
 ## [Unreleased]
 
+## [0.1.0] - 2026-11-19
+
+First release since 0.0.1. In short:
+
+- **Ruby 4.0 or newer is now required.** Ruby 3.2 and 3.3 are no longer
+  supported.
+- **Reliability fixes.** Publishers and deliveries no longer hang or stay
+  pending forever when a channel closes, a subscriber unsubscribes, or an
+  `on_dead_letter` callback raises; `DeadLetterQueue#drain` no longer loses
+  or loops on entries; stats no longer miscount.
+- **Stricter validation.** Invalid `type:`, `throttle:`, `max_pending:` and
+  `log_level` values, and `subscribe` without a block, now raise
+  `ArgumentError` up front instead of failing or hanging later.
+- **A much smaller gem.** The package holds only the library and top-level
+  docs: about 15 KB instead of 19.9 MB.
+- **Project tooling.** CI, Dependabot, a LICENSE file, `llms.txt`, and
+  quality gates run through asgard in place of Rake.
+
 ### Fixed
 
 - `Channel#close` now nacks every pending delivery even when an
@@ -86,6 +104,9 @@
 
 ### Changed
 
+- **Breaking:** Ruby 4.0 or newer is required
+  (`required_ruby_version = ">= 4.0"`, previously `>= 3.2.0`). Support for
+  Ruby 3.2 and 3.3 is dropped, and CI runs on Ruby 4.0 only.
 - The `MessageBus` "Unknown channel" `ArgumentError` now shows the name with
   `inspect` and lists the registered channels, e.g.
   `Unknown channel: "orders" (registered: :orders, :payments)`, so a
@@ -106,14 +127,32 @@
 - Refreshed the development `Gemfile.lock` with a full `bundle update`
   (minitest 6.1, rake 13.4, simplecov 1.3, rdoc 8.1, prism 2.1) (#41).
 - Removed the no-op `Configuration#initialize_copy` override (#21).
+- `Channel#publish` is split into small private steps, and repeated lookups
+  in `Channel`, `DeliveryTracker` and `MessageBus` are tidied. No public API
+  or behaviour change.
+- Development tasks now run through asgard (`.loki`, importing the shared
+  task files from the sibling `dev` repository) instead of Rake. The
+  `Rakefile` and the `rake` development dependency are removed; CI runs the
+  suite with plain `ruby`.
+- The documentation now states what `<channel>_nacked` counts and that the
+  delivery counters are per delivery, not per message (#78), lists the
+  `ArgumentError`s the constructors raise, and describes how publishers
+  waiting on a channel are woken when it closes.
 
 ### Added
 
 - MIT `LICENSE` file (#11); `documentation_uri`, `bug_tracker_uri`, and
   `rubygems_mfa_required` gemspec metadata (#12).
-- CI workflow running the test suite on Ruby 3.2-4.0 plus a load smoke test
-  outside the dev bundle (#20); Dependabot configuration (#15), with its
-  update PRs targeting the `develop` branch (#40).
+- CI workflow running the test suite plus a load smoke test outside the dev
+  bundle (#20); Dependabot configuration (#15), with its update PRs
+  targeting the `develop` branch (#40).
+- `llms.txt`, a summary of the gem for LLM readers (#65), also served from
+  the docs site at `/typed_bus/llms.txt` (#77).
+- `examples/15_performance.rb`, a live terminal dashboard of throughput,
+  memory and GC built on `ratatui_ruby` (optional `:extras` bundle group).
+- Quality gates run with `asgard quality`: RuboCop, Flog, Flay, Reek, typos,
+  bundler-audit, Exhale and SCRAP, configured by `.rubocop.yml`, `.reek.yml`
+  and `_typos.toml`.
 
 ## [0.0.1] - 2026-02-07
 
